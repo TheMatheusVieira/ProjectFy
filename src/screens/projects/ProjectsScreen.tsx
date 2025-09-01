@@ -10,16 +10,101 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
-// Types
-import { User, Project } from '../../types';
-import { COLORS, THEME } from '../../constants/colors';
+// Types (assumindo que estão definidos em outro arquivo)
+type User = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+type Project = {
+  id: string;
+  name: string;
+  description: string;
+  progress: number;
+  deadline: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'planning' | 'in_progress' | 'completed' | 'on_hold';
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  tasks: [];
+  // Campos opcionais
+  company?: string;
+  estimatedHours?: number;
+  team?: Array<{id: string; name: string; role: string}>;
+};
+
+// Cores (assumindo estrutura similar)
+const COLORS = {
+  background: '#F9FAFB',
+  white: '#FFFFFF',
+  primary: { 500: '#3B82F6' },
+  accent: { 500: '#8B5CF6' },
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  gray: {
+    100: '#F3F4F6',
+    200: '#E5E7EB',
+    300: '#D1D5DB',
+    400: '#9CA3AF',
+    500: '#6B7280',
+    600: '#4B5563',
+    700: '#374151',
+    800: '#1F2937',
+  },
+};
+
+const THEME = {
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
+  },
+  fontSize: {
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 18,
+    xl: 20,
+  },
+  borderRadius: {
+    sm: 4,
+    lg: 12,
+    full: 9999,
+  },
+  shadows: {
+    sm: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+  },
+};
 
 export default function ProjectsScreen(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [filter, setFilter] = useState<'all' | 'in_progress' | 'completed' | 'planning'>('all');
+
+  const navigation = useNavigation();
+
+  // Carrega dados quando a tela ganha foco (ao voltar de outras telas)
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   useEffect(() => {
     loadData();
@@ -38,9 +123,23 @@ export default function ProjectsScreen(): JSX.Element {
         const allProjects: Project[] = projectsData ? JSON.parse(projectsData) : [];
         const userProjects = allProjects.filter(p => p.userId === userData.id);
         setProjects(userProjects);
+        
+        console.log(`Carregados ${userProjects.length} projetos para o usuário ${userData.name}`);
+      } else {
+        console.log('Usuário não encontrado no AsyncStorage');
+        Alert.alert('Sessão Expirada', 'Faça login novamente.', [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navegar para tela de login se necessário
+              // navigation.navigate('Login');
+            }
+          }
+        ]);
       }
     } catch (error) {
       console.error('Erro ao carregar projetos:', error);
+      Alert.alert('Erro', 'Erro ao carregar projetos. Tente novamente.');
     }
   };
 
@@ -48,43 +147,6 @@ export default function ProjectsScreen(): JSX.Element {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
-  };
-
-  const createSampleProject = async (): Promise<void> => {
-    if (!user) return;
-
-    try {
-      const newProject: Project = {
-        id: Date.now().toString(),
-        name: `Projeto ${projects.length + 1}`,
-        description: 'Descrição do projeto',
-        progress: Math.floor(Math.random() * 100),
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
-        priority: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)] as Project['priority'],
-        status: 'in_progress',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        userId: user.id,
-        tasks: [],
-      };
-
-      // Carregar projetos existentes
-      const projectsData = await AsyncStorage.getItem('projects');
-      const allProjects: Project[] = projectsData ? JSON.parse(projectsData) : [];
-      
-      // Adicionar novo projeto
-      allProjects.push(newProject);
-      await AsyncStorage.setItem('projects', JSON.stringify(allProjects));
-      
-      // Atualizar estado local
-      const userProjects = allProjects.filter(p => p.userId === user.id);
-      setProjects(userProjects);
-
-      Alert.alert('Sucesso', 'Projeto criado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao criar projeto:', error);
-      Alert.alert('Erro', 'Erro ao criar projeto. Tente novamente.');
-    }
   };
 
   const deleteProject = async (projectId: string): Promise<void> => {
@@ -160,8 +222,8 @@ export default function ProjectsScreen(): JSX.Element {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersContainer}>
           {[
             { key: 'all', label: 'Todos' },
-            { key: 'in_progress', label: 'Em Andamento' },
             { key: 'planning', label: 'Planejamento' },
+            { key: 'in_progress', label: 'Em Andamento' },
             { key: 'completed', label: 'Concluídos' },
           ].map(filterOption => (
             <TouchableOpacity
@@ -182,7 +244,10 @@ export default function ProjectsScreen(): JSX.Element {
           ))}
         </ScrollView>
         
-        <TouchableOpacity style={styles.addButton} onPress={createSampleProject}>
+        <TouchableOpacity 
+          style={styles.addButton}  
+          onPress={() => (navigation as any).navigate('CreateProject')}
+        >
           <Ionicons name="add" size={24} color={COLORS.white} />
         </TouchableOpacity>
       </View>
@@ -198,13 +263,24 @@ export default function ProjectsScreen(): JSX.Element {
         {filteredProjects.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="folder-outline" size={64} color={COLORS.gray[300]} />
-            <Text style={styles.emptyTitle}>Nenhum projeto encontrado</Text>
+            <Text style={styles.emptyTitle}>
+              {filter === 'all' ? 'Nenhum projeto encontrado' : `Nenhum projeto ${getStatusLabel(filter as Project['status']).toLowerCase()}`}
+            </Text>
             <Text style={styles.emptySubtitle}>
               {filter === 'all' 
                 ? 'Toque no botão + para criar seu primeiro projeto'
-                : `Nenhum projeto ${getStatusLabel(filter as Project['status']).toLowerCase()}`
+                : `Você não possui projetos com status "${getStatusLabel(filter as Project['status']).toLowerCase()}"`
               }
             </Text>
+            {filter === 'all' && (
+              <TouchableOpacity 
+                style={styles.createFirstProjectButton}
+                onPress={() => (navigation as any).navigate('CreateProject')}
+              >
+                <Ionicons name="add" size={20} color={COLORS.white} />
+                <Text style={styles.createFirstProjectText}>Criar Primeiro Projeto</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           filteredProjects.map(project => (
@@ -227,6 +303,11 @@ export default function ProjectsScreen(): JSX.Element {
                   <Ionicons name="trash-outline" size={20} color={COLORS.error} />
                 </TouchableOpacity>
               </View>
+
+              {/* Empresa (se existir) */}
+              {project.company && (
+                <Text style={styles.projectCompany}>{project.company}</Text>
+              )}
 
               {/* Descrição */}
               {project.description && (
@@ -260,6 +341,23 @@ export default function ProjectsScreen(): JSX.Element {
                     }
                   ]}
                 />
+              </View>
+
+              {/* Informações adicionais */}
+              <View style={styles.projectInfo}>
+                {project.estimatedHours && project.estimatedHours > 0 && (
+                  <View style={styles.infoItem}>
+                    <Ionicons name="time-outline" size={16} color={COLORS.gray[500]} />
+                    <Text style={styles.infoText}>{project.estimatedHours}h estimadas</Text>
+                  </View>
+                )}
+                
+                {project.team && project.team.length > 0 && (
+                  <View style={styles.infoItem}>
+                    <Ionicons name="people-outline" size={16} color={COLORS.gray[500]} />
+                    <Text style={styles.infoText}>{project.team.length} membro(s)</Text>
+                  </View>
+                )}
               </View>
 
               {/* Footer */}
@@ -348,12 +446,28 @@ const styles = StyleSheet.create({
     color: COLORS.gray[600],
     marginTop: THEME.spacing.md,
     marginBottom: THEME.spacing.sm,
+    fontWeight: '600',
   },
   emptySubtitle: {
     fontSize: THEME.fontSize.md,
     color: COLORS.gray[500],
     textAlign: 'center',
     paddingHorizontal: THEME.spacing.xl,
+    marginBottom: THEME.spacing.lg,
+  },
+  createFirstProjectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary[500],
+    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: THEME.spacing.md,
+    borderRadius: THEME.borderRadius.lg,
+    gap: THEME.spacing.sm,
+  },
+  createFirstProjectText: {
+    color: COLORS.white,
+    fontSize: THEME.fontSize.md,
+    fontWeight: '500',
   },
   projectCard: {
     backgroundColor: COLORS.white,
@@ -383,9 +497,16 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.lg,
     color: COLORS.gray[800],
     flex: 1,
+    fontWeight: '600',
   },
   deleteButton: {
     padding: THEME.spacing.sm,
+  },
+  projectCompany: {
+    fontSize: THEME.fontSize.sm,
+    color: COLORS.gray[500],
+    marginBottom: THEME.spacing.xs,
+    fontStyle: 'italic',
   },
   projectDescription: {
     fontSize: THEME.fontSize.sm,
@@ -416,6 +537,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: THEME.fontSize.sm,
     color: COLORS.gray[700],
+    fontWeight: '500',
   },
   progressBar: {
     height: 6,
@@ -427,6 +549,20 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 3,
+  },
+  projectInfo: {
+    flexDirection: 'row',
+    marginBottom: THEME.spacing.md,
+    gap: THEME.spacing.md,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  infoText: {
+    fontSize: THEME.fontSize.xs,
+    color: COLORS.gray[600],
   },
   projectFooter: {
     flexDirection: 'row',
@@ -450,5 +586,6 @@ const styles = StyleSheet.create({
   },
   priorityText: {
     fontSize: THEME.fontSize.xs,
+    fontWeight: '500',
   },
 });

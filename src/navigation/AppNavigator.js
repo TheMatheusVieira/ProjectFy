@@ -11,6 +11,7 @@ import DashboardScreen from '../screens/dashboard/DashboardScreen';
 import ProjectsScreen from '../screens/projects/ProjectsScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import LoadingScreen from '../screens/LoadingScreen';
+import CreateProjectScreen from '../screens/projects/CreateProjectScreen';
 
 // Constants
 import { COLORS } from '../constants/colors';
@@ -114,33 +115,32 @@ export default function AppNavigator() {
       }}
     >
       {isAuthenticated ? (
-        // Usuário autenticado - mostra as tabs
-        <Stack.Screen 
-          name="dashboard" 
-          component={TabNavigator} 
-          options={{ headerShown: false }}
-        />
-      ) : (
-        // Usuário não autenticado - mostra telas de auth
-        <>
-          <Stack.Screen 
-            name="Login" 
-            component={LoginScreen}
-            options={{ 
-              title: 'Entrar',
-              headerShown: false 
-            }}
-          />
-          <Stack.Screen 
-            name="Register" 
-            component={RegisterScreen}
-            options={{ 
-              title: 'Cadastrar',
-              headerLeft: null 
-            }}
-          />
-        </>
-      )}
+  <>
+    <Stack.Screen 
+      name="dashboard" 
+      component={TabNavigator} 
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen 
+      name="CreateProject" 
+      component={CreateProjectScreen} 
+      options={{ title: 'Novo Projeto' }}
+    />
+  </>
+) : (
+  <>
+    <Stack.Screen 
+      name="Login" 
+      component={LoginScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen 
+      name="Register" 
+      component={RegisterScreen}
+    />
+  </>
+)}
+
     </Stack.Navigator>
   );
 }
