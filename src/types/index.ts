@@ -30,15 +30,17 @@ export interface Project {
   id: string;
   name: string;
   description?: string;
-  company: string;
+  company?: string;
   progress: number;
   deadline: string;
   priority: 'low' | 'medium' | 'high';
   status: 'planning' | 'in_progress' | 'completed' | 'on_hold';
   createdAt: string;
   updatedAt: string;
+  estimatedHours?: number;
   userId: string;
   tasks: string[]; // IDs das tarefas
+  team?: Array<{id: string; name: string; role: string}>;
   attachments?: Attachment[];
 }
 

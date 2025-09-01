@@ -182,7 +182,7 @@ export default function DashboardScreen(): JSX.Element {
             <Ionicons name="folder-outline" size={24} color={COLORS.primary[500]} />
             <Text style={styles.cardNumber}>{projects.length}</Text>
           </View>
-          <Text style={styles.cardLabel}>Projetos Ativos</Text>
+          <Text style={styles.cardLabel}>Projetos ativos</Text>
         </View>
 
         <View style={styles.card}>
@@ -225,7 +225,7 @@ export default function DashboardScreen(): JSX.Element {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="calendar-outline" size={20} color={COLORS.secondary[500]} />
-          <Text style={styles.sectionTitle}>Agenda de Hoje</Text>
+          <Text style={styles.sectionTitle}>Agenda de hoje</Text>
           <Ionicons name="chevron-forward-outline" size={16} color={COLORS.gray[400]} />
         </View>
         {todaySchedule.map((event) => (
@@ -248,7 +248,7 @@ export default function DashboardScreen(): JSX.Element {
       {/* Projetos em Andamento */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Meus Projetos</Text>
+          <Text style={styles.sectionTitle}>Meus projetos</Text>
           <TouchableOpacity>
             <Ionicons name="add-outline" size={20} color={COLORS.primary[500]} />
           </TouchableOpacity>

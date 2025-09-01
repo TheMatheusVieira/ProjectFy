@@ -15,6 +15,7 @@ import CreateProjectScreen from '../screens/projects/CreateProjectScreen';
 
 // Constants
 import { COLORS } from '../constants/colors';
+import CalendarScreen from '../screens/calendar/CalendarScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,6 +32,8 @@ function TabNavigator() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Projetos') {
             iconName = focused ? 'folder' : 'folder-outline';
+          } else if (route.name === 'Agenda'){
+            iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'Perfil') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -58,18 +61,24 @@ function TabNavigator() {
       <Tab.Screen 
         name="Dashboard" 
         component={DashboardScreen} 
-        options={{ title: 'HOME' }}
+        options={{ title: 'Home' }}
       />
       <Tab.Screen 
         name="Projetos" 
         component={ProjectsScreen} 
         options={{ title: 'Projetos' }}
       />
+        <Tab.Screen
+      name="Agenda"
+      component={CalendarScreen}
+      options={{ title: 'Agenda'}}
+      />
       <Tab.Screen 
         name="Perfil" 
         component={ProfileScreen} 
         options={{ title: 'Perfil' }}
       />
+    
     </Tab.Navigator>
   );
 }

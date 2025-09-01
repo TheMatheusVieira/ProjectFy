@@ -12,84 +12,9 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
+import { COLORS, THEME } from '../../constants/colors';
+import { Project, User } from '../../types';
 
-// Types (assumindo que estão definidos em outro arquivo)
-type User = {
-  id: string;
-  name: string;
-  email: string;
-};
-
-type Project = {
-  id: string;
-  name: string;
-  description: string;
-  progress: number;
-  deadline: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'planning' | 'in_progress' | 'completed' | 'on_hold';
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  tasks: [];
-  // Campos opcionais
-  company?: string;
-  estimatedHours?: number;
-  team?: Array<{id: string; name: string; role: string}>;
-};
-
-// Cores (assumindo estrutura similar)
-const COLORS = {
-  background: '#F9FAFB',
-  white: '#FFFFFF',
-  primary: { 500: '#3B82F6' },
-  accent: { 500: '#8B5CF6' },
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  gray: {
-    100: '#F3F4F6',
-    200: '#E5E7EB',
-    300: '#D1D5DB',
-    400: '#9CA3AF',
-    500: '#6B7280',
-    600: '#4B5563',
-    700: '#374151',
-    800: '#1F2937',
-  },
-};
-
-const THEME = {
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
-  },
-  fontSize: {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-  },
-  borderRadius: {
-    sm: 4,
-    lg: 12,
-    full: 9999,
-  },
-  shadows: {
-    sm: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 1,
-    },
-  },
-};
 
 export default function ProjectsScreen(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);

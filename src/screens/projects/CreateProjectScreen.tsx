@@ -4,15 +4,15 @@ import {
     SafeAreaView, 
     ScrollView, 
     View, 
-    Text, 
-    TextInput, 
-    Button, 
+    TextInput,  
     TouchableOpacity, 
     StyleSheet, 
-    Alert 
+    Alert,
+    Text,
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Project, User } from "../../types";
 
 // --- TIPOS CORRIGIDOS PARA COMPATIBILIDADE ---
 type Priority = 'high' | 'medium' | 'low';
@@ -22,30 +22,6 @@ type TeamMember = {
   id: string;
   name: string;
   role: string;
-};
-
-type User = {
-  id: string;
-  name: string;
-  email: string;
-};
-
-type Project = {
-  id: string;  // Mudado para string
-  name: string;
-  description: string;
-  progress: number;
-  deadline: string;
-  priority: Priority;
-  status: ProjectStatus;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  tasks: [];
-  // Campos adicionais opcionais
-  company?: string;
-  estimatedHours?: number;
-  team?: TeamMember[];
 };
 
 const CreateProjectScreen = () => {
@@ -203,13 +179,14 @@ const CreateProjectScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.mainTitle}>Novo Projeto</Text>
-                <Text style={styles.subtitle}>Passo {step} de 3</Text>
-                
+                <text style={styles.mainTitle}>Novo Projeto</text>
+                <text style={styles.subtitle}>Passo {step} de 3</text>
+
+
                 {/* PASSO 1: INFORMAÇÕES BÁSICAS */}
                 {step === 1 && (
                     <View>
-                        <Text style={styles.stepTitle}>Informações Básicas</Text>
+                        <text style={styles.stepTitle}>Informações Básicas</text>
                         <TextInput 
                             style={styles.input} 
                             placeholder="Nome do Projeto *" 
@@ -235,7 +212,7 @@ const CreateProjectScreen = () => {
                 {/* PASSO 2: DETALHES DO PROJETO */}
                 {step === 2 && (
                     <View>
-                        <Text style={styles.stepTitle}>Detalhes e Prazos</Text>
+                        <text style={styles.stepTitle}>Detalhes e Prazos</text>
                         <TextInput 
                             style={styles.input} 
                             placeholder="Horas Estimadas" 
@@ -251,7 +228,7 @@ const CreateProjectScreen = () => {
                         />
                         
                         {/* SELETOR DE PRIORIDADE CORRIGIDO */}
-                        <Text style={styles.label}>Prioridade *</Text>
+                        <text style={styles.label}>Prioridade *</text>
                         <View style={styles.priorityContainer}>
                             {[
                                 { key: 'low', label: 'Baixa', color: '#10B981' },
@@ -270,10 +247,7 @@ const CreateProjectScreen = () => {
                                     onPress={() => setProjectData(p => ({ ...p, priority: option.key as Priority }))}
                                 >
                                     <View style={[styles.priorityDot, { backgroundColor: option.color }]} />
-                                    <Text style={[
-                                        styles.priorityText,
-                                        projectData.priority === option.key && { color: option.color }
-                                    ]}>
+                                    <Text style={[styles.priorityText, projectData.priority === option.key && { color: option.color }]}>
                                         {option.label}
                                     </Text>
                                 </TouchableOpacity>
@@ -285,14 +259,14 @@ const CreateProjectScreen = () => {
                 {/* PASSO 3: EQUIPE */}
                 {step === 3 && (
                     <View>
-                        <Text style={styles.stepTitle}>Equipe Envolvida</Text>
-                        <Text style={styles.stepSubtitle}>Adicione os membros da equipe (opcional)</Text>
+                        <text style={styles.stepTitle}>Equipe Envolvida</text>
+                        <text style={styles.stepSubtitle}>Adicione os membros da equipe (opcional)</text>
                         
                         {projectData.team.map(member => (
                             <View key={member.id} style={styles.memberItem}>
                                 <View>
-                                    <Text style={styles.memberName}>{member.name}</Text>
-                                    <Text style={styles.memberRole}>{member.role}</Text>
+                                    <text style={styles.memberName}>{member.name}</text>
+                                    <text style={styles.memberRole}>{member.role}</text>
                                 </View>
                                 <TouchableOpacity onPress={() => handleRemoveMember(member.id)}>
                                     <Ionicons name="trash-outline" size={20} color="#EF4444" />
@@ -314,7 +288,7 @@ const CreateProjectScreen = () => {
                                 onChangeText={setMemberRole} 
                             />
                             <TouchableOpacity style={styles.addMemberButton} onPress={handleAddMember}>
-                                <Text style={styles.addMemberButtonText}>Adicionar Membro</Text>
+                                <text style={styles.addMemberButtonText}>Adicionar Membro</text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -327,7 +301,7 @@ const CreateProjectScreen = () => {
                             style={[styles.navButton, styles.backButton]} 
                             onPress={() => setStep(s => s - 1)}
                         >
-                            <Text style={styles.backButtonText}>Voltar</Text>
+                            <text style={styles.backButtonText}>Voltar</text>
                         </TouchableOpacity>
                     )}
                     
@@ -336,14 +310,14 @@ const CreateProjectScreen = () => {
                             style={[styles.navButton, styles.nextButton]} 
                             onPress={handleNextStep}
                         >
-                            <Text style={styles.nextButtonText}>Avançar</Text>
+                            <text style={styles.nextButtonText}>Avançar</text>
                         </TouchableOpacity>
                     ) : (
                         <TouchableOpacity 
                             style={[styles.navButton, styles.saveButton]} 
                             onPress={handleSaveProject}
                         >
-                            <Text style={styles.saveButtonText}>Salvar Projeto</Text>
+                            <text style={styles.saveButtonText}>Salvar Projeto</text>
                         </TouchableOpacity>
                     )}
                 </View>
