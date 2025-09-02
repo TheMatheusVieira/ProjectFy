@@ -179,14 +179,14 @@ const CreateProjectScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <text style={styles.mainTitle}>Novo Projeto</text>
-                <text style={styles.subtitle}>Passo {step} de 3</text>
+                <Text style={styles.mainTitle}>Novo Projeto</Text>
+                <Text style={styles.subtitle}>Passo {step} de 3</Text>
 
 
                 {/* PASSO 1: INFORMAÇÕES BÁSICAS */}
                 {step === 1 && (
                     <View>
-                        <text style={styles.stepTitle}>Informações Básicas</text>
+                        <Text style={styles.stepTitle}>Informações Básicas</Text>
                         <TextInput 
                             style={styles.input} 
                             placeholder="Nome do Projeto *" 
@@ -212,7 +212,7 @@ const CreateProjectScreen = () => {
                 {/* PASSO 2: DETALHES DO PROJETO */}
                 {step === 2 && (
                     <View>
-                        <text style={styles.stepTitle}>Detalhes e Prazos</text>
+                        <Text style={styles.stepTitle}>Detalhes e Prazos</Text>
                         <TextInput 
                             style={styles.input} 
                             placeholder="Horas Estimadas" 
@@ -228,7 +228,7 @@ const CreateProjectScreen = () => {
                         />
                         
                         {/* SELETOR DE PRIORIDADE CORRIGIDO */}
-                        <text style={styles.label}>Prioridade *</text>
+                        <Text style={styles.label}>Prioridade *</Text>
                         <View style={styles.priorityContainer}>
                             {[
                                 { key: 'low', label: 'Baixa', color: '#10B981' },
@@ -259,14 +259,14 @@ const CreateProjectScreen = () => {
                 {/* PASSO 3: EQUIPE */}
                 {step === 3 && (
                     <View>
-                        <text style={styles.stepTitle}>Equipe Envolvida</text>
-                        <text style={styles.stepSubtitle}>Adicione os membros da equipe (opcional)</text>
+                        <Text style={styles.stepTitle}>Equipe Envolvida</Text>
+                        <Text style={styles.stepSubtitle}>Adicione os membros da equipe (opcional)</Text>
                         
                         {projectData.team.map(member => (
                             <View key={member.id} style={styles.memberItem}>
                                 <View>
-                                    <text style={styles.memberName}>{member.name}</text>
-                                    <text style={styles.memberRole}>{member.role}</text>
+                                    <Text style={styles.memberName}>{member.name}</Text>
+                                    <Text style={styles.memberRole}>{member.role}</Text>
                                 </View>
                                 <TouchableOpacity onPress={() => handleRemoveMember(member.id)}>
                                     <Ionicons name="trash-outline" size={20} color="#EF4444" />
@@ -288,7 +288,7 @@ const CreateProjectScreen = () => {
                                 onChangeText={setMemberRole} 
                             />
                             <TouchableOpacity style={styles.addMemberButton} onPress={handleAddMember}>
-                                <text style={styles.addMemberButtonText}>Adicionar Membro</text>
+                                <Text style={styles.addMemberButtonText}>Adicionar Membro</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -301,7 +301,7 @@ const CreateProjectScreen = () => {
                             style={[styles.navButton, styles.backButton]} 
                             onPress={() => setStep(s => s - 1)}
                         >
-                            <text style={styles.backButtonText}>Voltar</text>
+                            <Text style={styles.backButtonText}>Voltar</Text>
                         </TouchableOpacity>
                     )}
                     
@@ -310,14 +310,14 @@ const CreateProjectScreen = () => {
                             style={[styles.navButton, styles.nextButton]} 
                             onPress={handleNextStep}
                         >
-                            <text style={styles.nextButtonText}>Avançar</text>
+                            <Text style={styles.nextButtonText}>Avançar</Text>
                         </TouchableOpacity>
                     ) : (
                         <TouchableOpacity 
                             style={[styles.navButton, styles.saveButton]} 
                             onPress={handleSaveProject}
                         >
-                            <text style={styles.saveButtonText}>Salvar Projeto</text>
+                            <Text style={styles.saveButtonText}>Salvar Projeto</Text>
                         </TouchableOpacity>
                     )}
                 </View>

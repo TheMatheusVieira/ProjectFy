@@ -13,14 +13,26 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, THEME } from '../../constants/colors';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/index';
 
-export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+type LoginScreenProps = {
+  navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
+};
 
-  const handleLogin = async () => {
+interface User {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export default function LoginScreen({ navigation }: LoginScreenProps) {
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const handleLogin = async (): Promise<void> => {
     if (!email || !password) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos');
       return;
@@ -34,18 +46,17 @@ export default function LoginScreen({ navigation }) {
     setIsLoading(true);
 
     try {
-      // Simular login - verificar se usuário existe no storage
-      const users = await AsyncStorage.getItem('users');
-      const usersList = users ? JSON.parse(users) : [];
-      
-      const user = usersList.find(u => u.email === email && u.password === password);
-      
+      const usersData = await AsyncStorage.getItem('users');
+      const usersList: User[] = usersData ? JSON.parse(usersData) : [];
+
+      const user = usersList.find(
+        (u: User) => u.email === email && u.password === password
+      );
+
       if (user) {
-        // Salvar token de autenticação
         await AsyncStorage.setItem('userToken', 'logged_in');
         await AsyncStorage.setItem('currentUser', JSON.stringify(user));
-        
-        // Resetar navegação para a tela principal
+
         navigation.reset({
           index: 0,
           routes: [{ name: 'Main' }],
@@ -54,38 +65,21 @@ export default function LoginScreen({ navigation }) {
         Alert.alert('Erro', 'E-mail ou senha incorretos');
       }
     } catch (error) {
-      Alert.alert('Erro', 'Erro ao fazer login. Tente novamente.');
       console.error('Erro no login:', error);
+      Alert.alert('Erro', 'Erro ao fazer login. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const isValidEmail = (email) => {
+  const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-
-// const handleLogout = async () => {
-//   try {
-//     await AsyncStorage.removeItem('userToken');
-//     await AsyncStorage.removeItem('currentUser');
-
-//     navigation.reset({
-//       index: 0,
-//       routes: [{ name: 'Login' }],
-//     });
-//   } catch (error) {
-//     console.error('Erro ao fazer logout:', error);
-//     Alert.alert('Erro', 'Não foi possível sair. Tente novamente.');
-//   }
-// };
-  
-
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -96,10 +90,10 @@ export default function LoginScreen({ navigation }) {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Ionicons 
-              name="mail-outline" 
-              size={20} 
-              color={COLORS.gray[400]} 
+            <Ionicons
+              name="mail-outline"
+              size={20}
+              color={COLORS.gray[400]}
               style={styles.inputIcon}
             />
             <TextInput
@@ -114,10 +108,10 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <View style={styles.inputContainer}>
-            <Ionicons 
-              name="lock-closed-outline" 
-              size={20} 
-              color={COLORS.gray[400]} 
+            <Ionicons
+              name="lock-closed-outline"
+              size={20}
+              color={COLORS.gray[400]}
               style={styles.inputIcon}
             />
             <TextInput
@@ -132,10 +126,10 @@ export default function LoginScreen({ navigation }) {
               onPress={() => setShowPassword(!showPassword)}
               style={styles.eyeIcon}
             >
-              <Ionicons 
-                name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                size={20} 
-                color={COLORS.gray[400]} 
+              <Ionicons
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={20}
+                color={COLORS.gray[400]}
               />
             </TouchableOpacity>
           </View>
@@ -178,7 +172,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: THEME.fontSize.xxxl,
-    fontWeight: THEME.fontWeight.bold,
+    fontWeight: 'bold',
     color: COLORS.primary[500],
     marginBottom: THEME.spacing.sm,
   },
@@ -225,7 +219,7 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: COLORS.white,
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: 'semibold',
   },
   footer: {
     flexDirection: 'row',
@@ -240,6 +234,6 @@ const styles = StyleSheet.create({
   registerLink: {
     fontSize: THEME.fontSize.md,
     color: COLORS.primary[500],
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: 'semibold',
   },
 });

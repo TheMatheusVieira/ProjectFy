@@ -126,7 +126,7 @@ export default function AppNavigator() {
       {isAuthenticated ? (
   <>
     <Stack.Screen 
-      name="dashboard" 
+      name="Main" 
       component={TabNavigator} 
       options={{ headerShown: false }}
     />
