@@ -45,6 +45,18 @@ export interface Project {
   attachments?: Attachment[];
 }
 
+//Tipos para agendamentos
+export interface Appointment {
+  id: string;
+  title: string;
+  description?: string;
+  date: string; // formato AAAA-MM-DD
+  time: string; // HH:mm
+  priority: "low" | "medium" | "high";
+  status: "scheduled" | "done" | "canceled";
+  userId: string;
+}
+
 // Tipos para tarefa
 export interface Task {
   id: string;

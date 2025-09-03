@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from "react";
+import { createStackNavigator } from "@react-navigation/stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Screens
-import LoginScreen from '../screens/auth/LoginScreen';
-import RegisterScreen from '../screens/auth/RegisterScreen';
-import DashboardScreen from '../screens/dashboard/DashboardScreen';
-import ProjectsScreen from '../screens/projects/ProjectsScreen';
-import ProfileScreen from '../screens/profile/ProfileScreen';
-import LoadingScreen from '../screens/LoadingScreen';
-import CreateProjectScreen from '../screens/projects/CreateProjectScreen';
+import LoginScreen from "../screens/auth/LoginScreen";
+import RegisterScreen from "../screens/auth/RegisterScreen";
+import DashboardScreen from "../screens/dashboard/DashboardScreen";
+import ProjectsScreen from "../screens/projects/ProjectsScreen";
+import ProfileScreen from "../screens/profile/ProfileScreen";
+import LoadingScreen from "../screens/LoadingScreen";
+import CreateAppointmentsScreen from "../screens/calendar/CreateAppointmentsScreen";
+import AppointmentsScreen from "../screens/calendar/AppointmentsScreen.tsx";
+import CreateProjectScreen from "../screens/projects/CreateProjectScreen";
 
 // Constants
-import { COLORS } from '../constants/colors';
-import CalendarScreen from '../screens/calendar/CalendarScreen';
+import { COLORS } from "../constants/colors";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -28,14 +29,14 @@ function TabNavigator() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === 'Dashboard') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Projetos') {
-            iconName = focused ? 'folder' : 'folder-outline';
-          } else if (route.name === 'Agenda'){
-            iconName = focused ? 'calendar' : 'calendar-outline';
-          } else if (route.name === 'Perfil') {
-            iconName = focused ? 'person' : 'person-outline';
+          if (route.name === "Dashboard") {
+            iconName = focused ? "home" : "home-outline";
+          } else if (route.name === "Projetos") {
+            iconName = focused ? "folder" : "folder-outline";
+          } else if (route.name === "Agenda") {
+            iconName = focused ? "calendar" : "calendar-outline";
+          } else if (route.name === "Perfil") {
+            iconName = focused ? "person" : "person-outline";
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -54,31 +55,30 @@ function TabNavigator() {
         },
         headerTintColor: COLORS.white,
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: "bold",
         },
       })}
     >
-      <Tab.Screen 
-        name="Dashboard" 
-        component={DashboardScreen} 
-        options={{ title: 'Home' }}
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{ title: "Home" }}
       />
-      <Tab.Screen 
-        name="Projetos" 
-        component={ProjectsScreen} 
-        options={{ title: 'Projetos' }}
+      <Tab.Screen
+        name="Projetos"
+        component={ProjectsScreen}
+        options={{ title: "Projetos" }}
       />
-        <Tab.Screen
-      name="Agenda"
-      component={CalendarScreen}
-      options={{ title: 'Agenda'}}
+      <Tab.Screen
+        name="Agenda"
+        component={AppointmentsScreen}
+        options={{ title: "Agenda" }}
       />
-      <Tab.Screen 
-        name="Perfil" 
-        component={ProfileScreen} 
-        options={{ title: 'Perfil' }}
+      <Tab.Screen
+        name="Perfil"
+        component={ProfileScreen}
+        options={{ title: "Perfil" }}
       />
-    
     </Tab.Navigator>
   );
 }
@@ -94,10 +94,10 @@ export default function AppNavigator() {
 
   const checkAuthStatus = async () => {
     try {
-      const userToken = await AsyncStorage.getItem('userToken');
+      const userToken = await AsyncStorage.getItem("userToken");
       setIsAuthenticated(!!userToken);
     } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
+      console.error("Erro ao verificar autenticação:", error);
     } finally {
       setIsLoading(false);
     }
@@ -119,37 +119,38 @@ export default function AppNavigator() {
         },
         headerTintColor: COLORS.white,
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: "bold",
         },
       }}
     >
       {isAuthenticated ? (
-  <>
-    <Stack.Screen 
-      name="Main" 
-      component={TabNavigator} 
-      options={{ headerShown: false }}
-    />
-    <Stack.Screen 
-      name="CreateProject" 
-      component={CreateProjectScreen} 
-      options={{ title: 'Novo Projeto' }}
-    />
-  </>
-) : (
-  <>
-    <Stack.Screen 
-      name="Login" 
-      component={LoginScreen}
-      options={{ headerShown: false }}
-    />
-    <Stack.Screen 
-      name="Register" 
-      component={RegisterScreen}
-    />
-  </>
-)}
-
+        <>
+          <Stack.Screen
+            name="Main"
+            component={TabNavigator}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CreateProject"
+            component={CreateProjectScreen}
+            options={{ title: "Novo Projeto" }}
+          />
+          <Stack.Screen
+            name="CreateAppointments"
+            component={CreateAppointmentsScreen}
+            options={{ title: "Novo Agendamento" }}
+          />
+        </>
+      ) : (
+        <>
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }

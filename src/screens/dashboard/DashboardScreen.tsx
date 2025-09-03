@@ -11,12 +11,13 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Types
-import { User, Project, ScheduleEvent, Alert } from '../../types';
+import { User, Project, Appointment, ScheduleEvent, Alert } from '../../types';
 import { COLORS, THEME } from '../../constants/colors';
 
 export default function DashboardScreen(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [todaySchedule, setTodaySchedule] = useState<ScheduleEvent[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -40,37 +41,6 @@ export default function DashboardScreen(): JSX.Element {
         const userProjects = allProjects.filter(p => p.userId === userData.id);
         setProjects(userProjects);
       }
-
-      // Carregar agenda (mock data por enquanto)
-      setTodaySchedule([
-        {
-          id: '1',
-          title: 'Reunião equipe - Sistema Web',
-          startTime: '09:00',
-          endTime: '10:00',
-          type: 'meeting',
-          userId: user?.id || '',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          title: 'Review código - App Mobile',
-          startTime: '14:00',
-          endTime: '15:00',
-          type: 'review',
-          userId: user?.id || '',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: '3',
-          title: 'Entrega módulo dashboard',
-          startTime: '16:30',
-          endTime: '17:00',
-          type: 'deadline',
-          userId: user?.id || '',
-          createdAt: new Date().toISOString(),
-        },
-      ]);
 
       // Carregar alertas (mock data por enquanto)
       setAlerts([
@@ -221,7 +191,7 @@ export default function DashboardScreen(): JSX.Element {
         </View>
       )} */}
 
-      {/* Agenda do Dia */}
+      {/* Agenda do dia */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Ionicons name="calendar-outline" size={20} color={COLORS.secondary[500]} />
@@ -284,21 +254,6 @@ export default function DashboardScreen(): JSX.Element {
           </View>
         ))}
       </View>
-
-      {/* Configuração de Trabalho */}
-      {/* <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Configuração de Trabalho</Text>
-        <View style={styles.workConfigRow}>
-          <View style={styles.workConfigItem}>
-            <Text style={styles.workConfigNumber}>{user.weeklyHours}h</Text>
-            <Text style={styles.workConfigLabel}>Horas/Semana</Text>
-          </View>
-          <View style={styles.workConfigItem}>
-            <Text style={styles.workConfigNumber}>{user.dailyHours}h</Text>
-            <Text style={styles.workConfigLabel}>Horas/Dia</Text>
-          </View>
-        </View>
-      </View> */}
 
 
 
@@ -486,25 +441,5 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.xs,
     color: COLORS.gray[600],
     marginTop: THEME.spacing.sm,
-  },
-  workConfigRow: {
-    flexDirection: 'row',
-    gap: THEME.spacing.md,
-  },
-  workConfigItem: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: COLORS.primary[50],
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
-  },
-  workConfigNumber: {
-    fontSize: THEME.fontSize.xl,
-    color: COLORS.primary[600],
-    marginBottom: 4,
-  },
-  workConfigLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: COLORS.gray[600],
   },
 });
