@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View, ActivityIndicator } from "react-native";
+
+// Context
+import { useAuth } from "../context/AuthContext";
 
 // Screens
 import LoginScreen from "../screens/auth/LoginScreen";
@@ -11,9 +14,17 @@ import DashboardScreen from "../screens/dashboard/DashboardScreen";
 import ProjectsScreen from "../screens/projects/ProjectsScreen";
 import ProfileScreen from "../screens/profile/ProfileScreen";
 import LoadingScreen from "../screens/LoadingScreen";
-import CreateAppointmentsScreen from "../screens/calendar/CreateAppointmentsScreen";
-import AppointmentsScreen from "../screens/calendar/AppointmentsScreen.tsx";
+import AppointmentsScreen from "../screens/calendar/AppointmentsScreen";
 import CreateProjectScreen from "../screens/projects/CreateProjectScreen";
+import UserManagementScreen from "../screens/profile/UserManagementScreen";
+import ProjectNotesScreen from "../screens/projects/ProjectNotesScreen";
+import AlertsScreen from "../screens/dashboard/AlertsScreen";
+import ProjectTasksScreen from "../screens/projects/ProjectTasksScreen";
+import ProjectAttachmentsScreen from "../screens/projects/ProjectAttachmentsScreen";
+import CreateAppointmentScreen from "../screens/calendar/CreateAppointmentScreen";
+import TimeTrackingScreen from "../screens/timer/TimeTrackingScreen";
+import ReportsScreen from "../screens/dashboard/ReportsScreen";
+import ProjectPurchasesScreen from "../screens/projects/ProjectPurchasesScreen";
 
 // Constants
 import { COLORS } from "../constants/colors";
@@ -35,6 +46,8 @@ function TabNavigator() {
             iconName = focused ? "folder" : "folder-outline";
           } else if (route.name === "Agenda") {
             iconName = focused ? "calendar" : "calendar-outline";
+          } else if (route.name === "Relatorios") {
+            iconName = focused ? "bar-chart" : "bar-chart-outline";
           } else if (route.name === "Perfil") {
             iconName = focused ? "person" : "person-outline";
           }
@@ -75,6 +88,11 @@ function TabNavigator() {
         options={{ title: "Agenda" }}
       />
       <Tab.Screen
+        name="Relatorios"
+        component={ReportsScreen}
+        options={{ title: "Relatórios" }}
+      />
+      <Tab.Screen
         name="Perfil"
         component={ProfileScreen}
         options={{ title: "Perfil" }}
@@ -85,29 +103,13 @@ function TabNavigator() {
 
 // Stack Navigator principal
 export default function AppNavigator() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const userToken = await AsyncStorage.getItem("userToken");
-      setIsAuthenticated(!!userToken);
-    } catch (error) {
-      console.error("Erro ao verificar autenticação:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Loading" component={LoadingScreen} />
-      </Stack.Navigator>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={COLORS.primary[500]} />
+      </View>
     );
   }
 
@@ -136,9 +138,44 @@ export default function AppNavigator() {
             options={{ title: "Novo Projeto" }}
           />
           <Stack.Screen
-            name="CreateAppointments"
-            component={CreateAppointmentsScreen}
-            options={{ title: "Novo Agendamento" }}
+            name="UserManagement"
+            component={UserManagementScreen}
+            options={{ title: "Gerenciar Usuários" }}
+          />
+          <Stack.Screen
+            name="ProjectNotes"
+            component={ProjectNotesScreen}
+            options={({ route }) => ({ title: `Notas: ${route.params.projectName}` })}
+          />
+          <Stack.Screen
+            name="Alerts"
+            component={AlertsScreen}
+            options={{ title: "Notificações" }}
+          />
+          <Stack.Screen
+            name="ProjectTasks"
+            component={ProjectTasksScreen}
+            options={({ route }) => ({ title: `Tarefas: ${route.params.projectName}` })}
+          />
+          <Stack.Screen
+            name="ProjectAttachments"
+            component={ProjectAttachmentsScreen}
+            options={({ route }) => ({ title: `Anexos: ${route.params.projectName}` })}
+          />
+          <Stack.Screen
+            name="ProjectPurchases"
+            component={ProjectPurchasesScreen}
+            options={({ route }) => ({ title: `Compras: ${route.params.projectName}` })}
+          />
+          <Stack.Screen
+            name="CreateAppointment"
+            component={CreateAppointmentScreen}
+            options={{ title: "Agendamento" }}
+          />
+          <Stack.Screen
+            name="TimeTracking"
+            component={TimeTrackingScreen}
+            options={({ route }) => ({ title: `Cronômetro: ${route.params.projectName}` })}
           />
         </>
       ) : (
@@ -148,7 +185,11 @@ export default function AppNavigator() {
             component={LoginScreen}
             options={{ headerShown: false }}
           />
-          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen
+            name="Register"
+            component={RegisterScreen}
+            options={{ title: "Cadastro" }}
+          />
         </>
       )}
     </Stack.Navigator>

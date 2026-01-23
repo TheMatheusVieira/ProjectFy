@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import React, { useState, useEffect } from "react";
 import { 
     SafeAreaView, 
@@ -11,12 +11,15 @@ import {
     Text,
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Project, User } from "../../types";
+import { Project, User, RootStackParamList, ProjectStatus } from "../../types";
+import StorageService from "../../services/StorageService";
+import NotificationManager from "../../services/NotificationManager";
+import { COLORS, THEME } from "../../constants/colors";
+import { v4 as uuidv4 } from 'uuid';
 
-// --- TIPOS CORRIGIDOS PARA COMPATIBILIDADE ---
+type CreateProjectScreenRouteProp = RouteProp<RootStackParamList, 'CreateProject'>;
+
 type Priority = 'high' | 'medium' | 'low';
-type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'on_hold';
 
 type TeamMember = {
   id: string;
@@ -26,35 +29,38 @@ type TeamMember = {
 
 const CreateProjectScreen = () => {
     const navigation = useNavigation();
+    const route = useRoute<CreateProjectScreenRouteProp>();
+    const editingProject = route.params?.project;
+
     const [step, setStep] = useState(1);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     const [projectData, setProjectData] = useState({
-        name: '',
-        company: '',
-        description: '',
-        estimatedHours: '0',
-        deadline: '',
-        priority: 'medium' as Priority,
-        team: [] as TeamMember[],
+        name: editingProject?.name || '',
+        company: editingProject?.company || '',
+        description: editingProject?.description || '',
+        estimatedHours: editingProject?.estimatedHours?.toString() || '0',
+        startDate: editingProject?.startDate || new Date().toISOString().split('T')[0],
+        deadline: editingProject?.deadline || '',
+        priority: editingProject?.priority || 'medium' as Priority,
+        status: editingProject?.status || 'planning' as ProjectStatus,
+        team: editingProject?.team || [] as TeamMember[],
     });
 
     const [memberName, setMemberName] = useState('');
     const [memberRole, setMemberRole] = useState('');
 
-    // Carregar usuário atual ao montar o componente
     useEffect(() => {
         loadCurrentUser();
     }, []);
 
     const loadCurrentUser = async () => {
         try {
-            const userData = await AsyncStorage.getItem('currentUser');
+            const userData = await StorageService.getCurrentUser();
             if (userData) {
-                setCurrentUser(JSON.parse(userData));
+                setCurrentUser(userData);
             } else {
                 Alert.alert('Erro', 'Usuário não encontrado. Faça login novamente.');
-                // Redirecionar para login se necessário
             }
         } catch (error) {
             console.error('Erro ao carregar usuário:', error);
@@ -67,7 +73,7 @@ const CreateProjectScreen = () => {
             return;
         }
         const newMember: TeamMember = {
-            id: Date.now().toString(),
+            id: uuidv4(),
             name: memberName.trim(),
             role: memberRole.trim(),
         };
@@ -96,48 +102,46 @@ const CreateProjectScreen = () => {
 
         // Validar formato da data
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(projectData.deadline)) {
-            Alert.alert("Formato Inválido", "Use o formato AAAA-MM-DD para o prazo.");
+        if (!dateRegex.test(projectData.deadline) || !dateRegex.test(projectData.startDate)) {
+            Alert.alert("Formato Inválido", "Use o formato AAAA-MM-DD para as datas.");
             return;
         }
 
         try {
             const now = new Date().toISOString();
-            const newProject: Project = {
-                id: Date.now().toString(), // ID como string
+            const project: Project = {
+                id: editingProject?.id || uuidv4(),
                 name: projectData.name.trim(),
                 description: projectData.description.trim(),
-                progress: 0,
+                progress: editingProject?.progress || 0,
+                startDate: projectData.startDate,
                 deadline: projectData.deadline,
                 priority: projectData.priority,
-                status: 'planning', // Status inicial
-                createdAt: now,
+                status: projectData.status,
+                createdAt: editingProject?.createdAt || now,
                 updatedAt: now,
                 userId: currentUser.id,
-                tasks: [],
-                // Campos adicionais
+                tasks: editingProject?.tasks || [],
                 company: projectData.company.trim() || undefined,
                 estimatedHours: parseInt(projectData.estimatedHours) || 0,
                 team: projectData.team,
             };
 
-            // Carregar projetos existentes do AsyncStorage
-            const storedProjects = await AsyncStorage.getItem('projects');
-            const allProjects: Project[] = storedProjects ? JSON.parse(storedProjects) : [];
+            // Se o status mudou, gerar notificação
+            if (editingProject && editingProject.status !== project.status) {
+                await NotificationManager.createProjectAlert(project.id, project.name, 'status');
+            }
 
-            // Adicionar novo projeto
-            allProjects.push(newProject);
-            await AsyncStorage.setItem('projects', JSON.stringify(allProjects));
+            await StorageService.saveProject(project);
 
-            Alert.alert('Sucesso', 'Projeto criado com sucesso!', [
+            Alert.alert('Sucesso', `Projeto ${editingProject ? 'atualizado' : 'criado'} com sucesso!`, [
                 {
                     text: 'OK',
                     onPress: () => {
-    if (navigation.canGoBack()) {
-        navigation.goBack();
-    }
-}
-
+                        if (navigation.canGoBack()) {
+                            navigation.goBack();
+                        }
+                    }
                 }
             ]);
 
@@ -156,13 +160,13 @@ const CreateProjectScreen = () => {
                 }
                 break;
             case 2:
-                if (!projectData.deadline) {
-                    Alert.alert('Campo Obrigatório', 'Prazo final é obrigatório.');
+                if (!projectData.deadline || !projectData.startDate) {
+                    Alert.alert('Campo Obrigatório', 'Datas de início e prazo final são obrigatórias.');
                     return false;
                 }
                 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-                if (!dateRegex.test(projectData.deadline)) {
-                    Alert.alert("Formato Inválido", "Use o formato AAAA-MM-DD para o prazo.");
+                if (!dateRegex.test(projectData.deadline) || !dateRegex.test(projectData.startDate)) {
+                    Alert.alert("Formato Inválido", "Use o formato AAAA-MM-DD para as datas.");
                     return false;
                 }
                 break;
@@ -179,7 +183,7 @@ const CreateProjectScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.mainTitle}>Novo Projeto</Text>
+                <Text style={styles.mainTitle}>{editingProject ? 'Editar Projeto' : 'Novo Projeto'}</Text>
                 <Text style={styles.subtitle}>Passo {step} de 3</Text>
 
 
@@ -206,6 +210,36 @@ const CreateProjectScreen = () => {
                             value={projectData.description} 
                             onChangeText={text => setProjectData(p => ({ ...p, description: text }))} 
                         />
+                        
+                        {editingProject && (
+                            <View>
+                                <Text style={styles.label}>Status</Text>
+                                <View style={styles.statusContainer}>
+                                    {[
+                                        { key: 'planning', label: 'Planejamento' },
+                                        { key: 'in_progress', label: 'Em Andamento' },
+                                        { key: 'completed', label: 'Concluído' },
+                                        { key: 'on_hold', label: 'Pausado' },
+                                    ].map(option => (
+                                        <TouchableOpacity
+                                            key={option.key}
+                                            style={[
+                                                styles.statusOption,
+                                                projectData.status === option.key && styles.statusOptionActive
+                                            ]}
+                                            onPress={() => setProjectData(p => ({ ...p, status: option.key as ProjectStatus }))}
+                                        >
+                                            <Text style={[
+                                                styles.statusOptionText,
+                                                projectData.status === option.key && styles.statusOptionTextActive
+                                            ]}>
+                                                {option.label}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
                     </View>
                 )}
 
@@ -220,6 +254,14 @@ const CreateProjectScreen = () => {
                             value={projectData.estimatedHours} 
                             onChangeText={text => setProjectData(p => ({ ...p, estimatedHours: text }))} 
                         />
+                        <Text style={styles.label}>Data de Início (AAAA-MM-DD) *</Text>
+                        <TextInput 
+                            style={styles.input} 
+                            placeholder="Data de Início (AAAA-MM-DD) *" 
+                            value={projectData.startDate} 
+                            onChangeText={text => setProjectData(p => ({ ...p, startDate: text }))} 
+                        />
+                        <Text style={styles.label}>Prazo Final (AAAA-MM-DD) *</Text>
                         <TextInput 
                             style={styles.input} 
                             placeholder="Prazo Final (AAAA-MM-DD) *" 
@@ -227,13 +269,12 @@ const CreateProjectScreen = () => {
                             onChangeText={text => setProjectData(p => ({ ...p, deadline: text }))} 
                         />
                         
-                        {/* SELETOR DE PRIORIDADE CORRIGIDO */}
                         <Text style={styles.label}>Prioridade *</Text>
                         <View style={styles.priorityContainer}>
                             {[
-                                { key: 'low', label: 'Baixa', color: '#10B981' },
-                                { key: 'medium', label: 'Média', color: '#F59E0B' },
-                                { key: 'high', label: 'Alta', color: '#EF4444' },
+                                { key: 'low', label: 'Baixa', color: COLORS.success },
+                                { key: 'medium', label: 'Média', color: COLORS.warning },
+                                { key: 'high', label: 'Alta', color: COLORS.error },
                             ].map(option => (
                                 <TouchableOpacity
                                     key={option.key}
@@ -269,7 +310,7 @@ const CreateProjectScreen = () => {
                                     <Text style={styles.memberRole}>{member.role}</Text>
                                 </View>
                                 <TouchableOpacity onPress={() => handleRemoveMember(member.id)}>
-                                    <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                                    <Ionicons name="trash-outline" size={20} color={COLORS.error} />
                                 </TouchableOpacity>
                             </View>
                         ))}
@@ -317,7 +358,7 @@ const CreateProjectScreen = () => {
                             style={[styles.navButton, styles.saveButton]} 
                             onPress={handleSaveProject}
                         >
-                            <Text style={styles.saveButtonText}>Salvar Projeto</Text>
+                            <Text style={styles.saveButtonText}>{editingProject ? 'Atualizar Projeto' : 'Salvar Projeto'}</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -329,7 +370,7 @@ const CreateProjectScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F9FAFB',
+        backgroundColor: COLORS.background,
     },
     scrollContainer: {
         padding: 16,
@@ -339,33 +380,34 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 8,
-        color: '#1F2937',
+        color: COLORS.gray[800],
     },
     subtitle: {
         fontSize: 16,
         textAlign: 'center',
         marginBottom: 24,
-        color: '#6B7280',
+        color: COLORS.gray[500],
     },
     stepTitle: {
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 8,
-        color: '#374151',
+        color: COLORS.gray[700],
     },
     stepSubtitle: {
         fontSize: 14,
-        color: '#6B7280',
+        color: COLORS.gray[500],
         marginBottom: 16,
     },
     input: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
         borderWidth: 1,
-        borderColor: '#D1D5DB',
+        borderColor: COLORS.gray[200],
         borderRadius: 8,
         padding: 12,
         marginBottom: 16,
         fontSize: 16,
+        color: COLORS.gray[800],
     },
     textArea: {
         height: 96,
@@ -373,8 +415,34 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 16,
-        color: '#4B5563',
+        color: COLORS.gray[700],
         marginBottom: 8,
+        fontWeight: '500',
+    },
+    statusContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 16,
+    },
+    statusOption: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: COLORS.gray[200],
+        backgroundColor: COLORS.white,
+    },
+    statusOptionActive: {
+        backgroundColor: COLORS.primary[500],
+        borderColor: COLORS.primary[500],
+    },
+    statusOptionText: {
+        fontSize: 14,
+        color: COLORS.gray[600],
+    },
+    statusOptionTextActive: {
+        color: COLORS.white,
         fontWeight: '500',
     },
     priorityContainer: {
@@ -385,10 +453,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 12,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: COLORS.gray[200],
         borderRadius: 8,
         marginBottom: 8,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
     },
     priorityDot: {
         width: 12,
@@ -398,42 +466,42 @@ const styles = StyleSheet.create({
     },
     priorityText: {
         fontSize: 16,
-        color: '#374151',
+        color: COLORS.gray[700],
     },
     memberItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: COLORS.white,
         padding: 12,
         borderRadius: 8,
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: COLORS.gray[200],
     },
     memberName: {
         fontWeight: 'bold',
         fontSize: 16,
-        color: '#1F2937',
+        color: COLORS.gray[800],
     },
     memberRole: {
-        color: '#6B7280',
+        color: COLORS.gray[500],
         fontSize: 14,
     },
     addMemberContainer: {
-        backgroundColor: '#F3F4F6',
+        backgroundColor: COLORS.gray[100],
         padding: 16,
         borderRadius: 8,
         marginTop: 16,
     },
     addMemberButton: {
-        backgroundColor: '#3B82F6',
+        backgroundColor: COLORS.primary[500],
         padding: 12,
         borderRadius: 8,
         alignItems: 'center',
     },
     addMemberButtonText: {
-        color: '#FFFFFF',
+        color: COLORS.white,
         fontSize: 16,
         fontWeight: '500',
     },
@@ -450,28 +518,28 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     backButton: {
-        backgroundColor: '#F3F4F6',
+        backgroundColor: COLORS.gray[100],
         borderWidth: 1,
-        borderColor: '#D1D5DB',
+        borderColor: COLORS.gray[200],
     },
     nextButton: {
-        backgroundColor: '#3B82F6',
+        backgroundColor: COLORS.primary[500],
     },
     saveButton: {
-        backgroundColor: '#10B981',
+        backgroundColor: COLORS.success,
     },
     backButtonText: {
-        color: '#6B7280',
+        color: COLORS.gray[500],
         fontSize: 16,
         fontWeight: '500',
     },
     nextButtonText: {
-        color: '#FFFFFF',
+        color: COLORS.white,
         fontSize: 16,
         fontWeight: '500',
     },
     saveButtonText: {
-        color: '#FFFFFF',
+        color: COLORS.white,
         fontSize: 16,
         fontWeight: '500',
     },

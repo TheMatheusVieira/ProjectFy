@@ -5,44 +5,73 @@ export type RootStackParamList = {
   Register: undefined;
   Main: undefined;
   Dashboard: undefined;
+  UserManagement: undefined;
+  CreateProject: { project?: Project } | undefined;
+  ProjectNotes: { projectId: string; projectName: string };
+  ProjectTasks: { projectId: string; projectName: string };
+  ProjectAttachments: { projectId: string; projectName: string };
+  ProjectPurchases: { projectId: string; projectName: string };
+  TimeTracking: { projectId: string; projectName: string };
+  Alerts: undefined;
+  CreateAppointment: { appointment?: Appointment; selectedDate?: string } | undefined;
 };
 
 export type TabParamList = {
   Dashboard: undefined;
   Projetos: undefined;
+  Agenda: undefined;
+  Relatorios: undefined;
   Perfil: undefined;
 };
 
 // Tipos para usuário
+export type UserRole = 'admin' | 'collaborator';
+
 export interface User {
   id: string;
   name: string;
   email: string;
   password: string;
+  role: UserRole;
   weeklyHours: number;
   dailyHours: number;
   createdAt: string;
+  updatedAt: string;
   projects: string[]; // IDs dos projetos
   tasks: string[]; // IDs das tarefas
 }
 
 // Tipos para projeto
+export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'on_hold';
+
 export interface Project {
   id: string;
   name: string;
   description?: string;
   company?: string;
   progress: number;
-  deadline: string;
+  startDate: string; // ISO string
+  deadline: string; // ISO string
   priority: 'low' | 'medium' | 'high';
-  status: 'planning' | 'in_progress' | 'completed' | 'on_hold';
+  status: ProjectStatus;
   createdAt: string;
   updatedAt: string;
   estimatedHours?: number;
   userId: string;
   tasks: string[]; // IDs das tarefas
-  team?: Array<{id: string; name: string; role: string}>;
+  team?: Array<{ id: string; name: string; role: string }>;
   attachments?: Attachment[];
+}
+
+// Tipos para anotações
+export interface Note {
+  id: string;
+  projectId: string;
+  userId: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 //Tipos para agendamentos
@@ -55,6 +84,9 @@ export interface Appointment {
   priority: "low" | "medium" | "high";
   status: "scheduled" | "done" | "canceled";
   userId: string;
+  projectId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Tipos para tarefa
@@ -67,6 +99,7 @@ export interface Task {
   priority: 'low' | 'medium' | 'high';
   projectId: string;
   userId: string;
+  assignedTo?: string; // ID do membro da equipe
   createdAt: string;
   updatedAt: string;
   hoursEstimated?: number;
@@ -94,6 +127,7 @@ export interface ScheduleEvent {
   projectId?: string;
   userId: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 // Tipos para alertas
@@ -104,8 +138,34 @@ export interface Alert {
   read: boolean;
   userId: string;
   createdAt: string;
+  updatedAt: string;
   projectId?: string;
   taskId?: string;
+}
+
+// Tipos para Contador de Horas
+export interface TimeLog {
+  id: string;
+  projectId: string;
+  userId: string;
+  start: string; // ISO string
+  end?: string; // ISO string
+  duration: number; // em segundos
+  description?: string;
+  synced: boolean;
+  updatedAt: string;
+}
+
+// Tipos para Compras
+export interface Purchase {
+  id: string;
+  projectId: string;
+  item: string;
+  quantity: number;
+  price: number;
+  status: 'planned' | 'purchased';
+  synced: boolean;
+  updatedAt: string;
 }
 
 // Tipos para estatísticas
@@ -129,15 +189,19 @@ export interface RegisterFormData {
   email: string;
   password: string;
   confirmPassword: string;
+  role: UserRole;
   weeklyHours: string;
   dailyHours: string;
 }
 
 export interface ProjectFormData {
   name: string;
+  company?: string;
   description: string;
+  startDate: string;
   deadline: string;
   priority: Project['priority'];
+  estimatedHours: string;
 }
 
 export interface TaskFormData {
@@ -146,6 +210,16 @@ export interface TaskFormData {
   dueDate: string;
   priority: Task['priority'];
   hoursEstimated: string;
+  assignedTo?: string;
+}
+
+export interface AppointmentFormData {
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  priority: Appointment['priority'];
+  projectId?: string;
 }
 
 // Tipos para contexto de autenticação

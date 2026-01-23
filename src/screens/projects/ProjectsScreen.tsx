@@ -9,12 +9,14 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { COLORS, THEME } from '../../constants/colors';
-import { Project, User } from '../../types';
+import { Project, User, RootStackParamList } from '../../types';
+import StorageService from '../../services/StorageService';
+import { StackNavigationProp } from '@react-navigation/stack';
 
+type ProjectsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
 export default function ProjectsScreen(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
@@ -22,7 +24,7 @@ export default function ProjectsScreen(): JSX.Element {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [filter, setFilter] = useState<'all' | 'in_progress' | 'completed' | 'planning'>('all');
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<ProjectsScreenNavigationProp>();
 
   // Carrega dados quando a tela ganha foco (ao voltar de outras telas)
   useFocusEffect(
@@ -38,29 +40,17 @@ export default function ProjectsScreen(): JSX.Element {
   const loadData = async (): Promise<void> => {
     try {
       // Carregar usuário atual
-      const currentUserData = await AsyncStorage.getItem('currentUser');
-      if (currentUserData) {
-        const userData: User = JSON.parse(currentUserData);
-        setUser(userData);
+      const currentUser = await StorageService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
         
         // Carregar projetos do usuário
-        const projectsData = await AsyncStorage.getItem('projects');
-        const allProjects: Project[] = projectsData ? JSON.parse(projectsData) : [];
-        const userProjects = allProjects.filter(p => p.userId === userData.id);
+        const userProjects = await StorageService.getUserProjects(currentUser.id);
         setProjects(userProjects);
         
-        console.log(`Carregados ${userProjects.length} projetos para o usuário ${userData.name}`);
+        console.log(`Carregados ${userProjects.length} projetos para o usuário ${currentUser.name}`);
       } else {
-        console.log('Usuário não encontrado no AsyncStorage');
-        Alert.alert('Sessão Expirada', 'Faça login novamente.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Navegar para tela de login se necessário
-              // navigation.navigate('Login');
-            }
-          }
-        ]);
+        console.log('Usuário não encontrado');
       }
     } catch (error) {
       console.error('Erro ao carregar projetos:', error);
@@ -76,18 +66,8 @@ export default function ProjectsScreen(): JSX.Element {
 
   const deleteProject = async (projectId: string): Promise<void> => {
     try {
-      // Carregar projetos existentes
-      const projectsData = await AsyncStorage.getItem('projects');
-      const allProjects: Project[] = projectsData ? JSON.parse(projectsData) : [];
-      
-      // Remover projeto
-      const updatedProjects = allProjects.filter(p => p.id !== projectId);
-      await AsyncStorage.setItem('projects', JSON.stringify(updatedProjects));
-      
-      // Atualizar estado local
-      const userProjects = updatedProjects.filter(p => p.userId === user?.id);
-      setProjects(userProjects);
-
+      await StorageService.deleteProject(projectId);
+      await loadData();
       Alert.alert('Sucesso', 'Projeto excluído com sucesso!');
     } catch (error) {
       console.error('Erro ao excluir projeto:', error);
@@ -171,7 +151,7 @@ export default function ProjectsScreen(): JSX.Element {
         
         <TouchableOpacity 
           style={styles.addButton}  
-          onPress={() => (navigation as any).navigate('CreateProject')}
+          onPress={() => navigation.navigate('CreateProject')}
         >
           <Ionicons name="add" size={24} color={COLORS.white} />
         </TouchableOpacity>
@@ -200,7 +180,7 @@ export default function ProjectsScreen(): JSX.Element {
             {filter === 'all' && (
               <TouchableOpacity 
                 style={styles.createFirstProjectButton}
-                onPress={() => (navigation as any).navigate('CreateProject')}
+                onPress={() => navigation.navigate('CreateProject')}
               >
                 <Ionicons name="add" size={20} color={COLORS.white} />
                 <Text style={styles.createFirstProjectText}>Criar Primeiro Projeto</Text>
@@ -221,12 +201,50 @@ export default function ProjectsScreen(): JSX.Element {
                   />
                   <Text style={styles.projectName}>{project.name}</Text>
                 </View>
-                <TouchableOpacity 
-                  style={styles.deleteButton}
-                  onPress={() => confirmDelete(project)}
-                >
-                  <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-                </TouchableOpacity>
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('ProjectPurchases', { projectId: project.id, projectName: project.name })}
+                  >
+                    <Ionicons name="cart-outline" size={20} color={COLORS.warning} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('TimeTracking', { projectId: project.id, projectName: project.name })}
+                  >
+                    <Ionicons name="time-outline" size={20} color={COLORS.gray[600]} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('ProjectAttachments', { projectId: project.id, projectName: project.name })}
+                  >
+                    <Ionicons name="attach-outline" size={20} color={COLORS.gray[500]} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('ProjectTasks', { projectId: project.id, projectName: project.name })}
+                  >
+                    <Ionicons name="list-outline" size={20} color={COLORS.accent[500]} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('ProjectNotes', { projectId: project.id, projectName: project.name })}
+                  >
+                    <Ionicons name="document-text-outline" size={20} color={COLORS.secondary[500]} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('CreateProject', { project })}
+                  >
+                    <Ionicons name="create-outline" size={20} color={COLORS.primary[500]} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => confirmDelete(project)}
+                  >
+                    <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Empresa (se existir) */}
@@ -424,8 +442,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontWeight: '600',
   },
-  deleteButton: {
+  actionButtons: {
+    flexDirection: 'row',
+  },
+  actionButton: {
     padding: THEME.spacing.sm,
+    marginLeft: THEME.spacing.xs,
   },
   projectCompany: {
     fontSize: THEME.fontSize.sm,

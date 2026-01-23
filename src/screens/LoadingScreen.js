@@ -5,7 +5,7 @@ import { COLORS, THEME } from '../constants/colors';
 export default function LoadingScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Gestão IST</Text>
+      <Text style={styles.title}>ProjectFy</Text>
       <ActivityIndicator 
         size="large" 
         color={COLORS.primary[500]} 

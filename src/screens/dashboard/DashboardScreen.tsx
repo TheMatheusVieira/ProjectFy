@@ -8,20 +8,33 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 
 // Types
-import { User, Project, Appointment, ScheduleEvent, Alert } from '../../types';
+import { User, Project, Appointment, ScheduleEvent, Alert, RootStackParamList } from '../../types';
 import { COLORS, THEME } from '../../constants/colors';
+import StorageService from '../../services/StorageService';
+import NotificationManager from '../../services/NotificationManager';
+import { StackNavigationProp } from '@react-navigation/stack';
+
+type DashboardScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
 export default function DashboardScreen(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [todaySchedule, setTodaySchedule] = useState<ScheduleEvent[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [currentTime] = useState<Date>(new Date());
+
+  const navigation = useNavigation<DashboardScreenNavigationProp>();
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   useEffect(() => {
     loadData();
@@ -30,37 +43,21 @@ export default function DashboardScreen(): JSX.Element {
   const loadData = async (): Promise<void> => {
     try {
       // Carregar usuário atual
-      const currentUserData = await AsyncStorage.getItem('currentUser');
-      if (currentUserData) {
-        const userData: User = JSON.parse(currentUserData);
-        setUser(userData);
+      const currentUser = await StorageService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        
+        // Verificar prazos e gerar alertas
+        await NotificationManager.checkDeadlines();
         
         // Carregar projetos do usuário
-        const projectsData = await AsyncStorage.getItem('projects');
-        const allProjects: Project[] = projectsData ? JSON.parse(projectsData) : [];
-        const userProjects = allProjects.filter(p => p.userId === userData.id);
+        const userProjects = await StorageService.getUserProjects(currentUser.id);
         setProjects(userProjects);
-      }
 
-      // Carregar alertas (mock data por enquanto)
-      setAlerts([
-        {
-          id: '1',
-          message: 'Deadline do projeto Sistema Web em 3 dias',
-          type: 'warning',
-          read: false,
-          userId: user?.id || '',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          message: 'Nova tarefa atribuída no App Mobile',
-          type: 'info',
-          read: false,
-          userId: user?.id || '',
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+        // Carregar alertas reais
+        const userAlerts = await StorageService.getUserAlerts(currentUser.id);
+        setAlerts(userAlerts);
+      }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
@@ -111,9 +108,9 @@ export default function DashboardScreen(): JSX.Element {
       </View>
     );
   }
-  
 
   const occupation = calculateOccupation();
+  const unreadAlertsCount = alerts.filter(a => !a.read).length;
 
   return (
     <ScrollView 
@@ -123,7 +120,7 @@ export default function DashboardScreen(): JSX.Element {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      Header
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
@@ -137,10 +134,23 @@ export default function DashboardScreen(): JSX.Element {
               })}
             </Text>
           </View>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user.name.charAt(0).toUpperCase()}
-            </Text>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('Alerts')}
+            >
+              <Ionicons name="notifications-outline" size={26} color={COLORS.gray[700]} />
+              {unreadAlertsCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadAlertsCount > 9 ? '9+' : unreadAlertsCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {user.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -175,21 +185,24 @@ export default function DashboardScreen(): JSX.Element {
         </View>
       </View>
 
-      {/* Alertas */}
-      {/* {alerts.length > 0 && (
+      {/* Alertas Recentes */}
+      {alerts.filter(a => !a.read).length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="alert-circle-outline" size={20} color={COLORS.warning} />
-            <Text style={styles.sectionTitle}>Alertas</Text>
+            <Text style={styles.sectionTitle}>Alertas Recentes</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Alerts')}>
+              <Text style={styles.seeAllText}>Ver todos</Text>
+            </TouchableOpacity>
           </View>
-          {alerts.map(alert => (
+          {alerts.filter(a => !a.read).slice(0, 2).map(alert => (
             <View key={alert.id} style={styles.alertItem}>
-              <View style={[styles.alertDot, { backgroundColor: COLORS.warning }]} />
-              <Text style={styles.alertText}>{alert.message}</Text>
+              <View style={[styles.alertDot, { backgroundColor: alert.type === 'error' ? COLORS.error : COLORS.warning }]} />
+              <Text style={styles.alertText} numberOfLines={2}>{alert.message}</Text>
             </View>
           ))}
         </View>
-      )} */}
+      )}
 
       {/* Agenda do dia */}
       <View style={styles.section}>
@@ -198,67 +211,71 @@ export default function DashboardScreen(): JSX.Element {
           <Text style={styles.sectionTitle}>Agenda de hoje</Text>
           <Ionicons name="chevron-forward-outline" size={16} color={COLORS.gray[400]} />
         </View>
-        {todaySchedule.map((event) => (
-          <View key={event.id} style={styles.scheduleItem}>
-            <View style={styles.scheduleTime}>
-              <Ionicons 
-                name={getEventIcon(event.type)} 
-                size={16} 
-                color={COLORS.gray[500]} 
-              />
-              <Text style={styles.timeText}>{event.startTime}</Text>
+        {todaySchedule.length === 0 ? (
+          <Text style={styles.emptyText}>Nenhum compromisso para hoje.</Text>
+        ) : (
+          todaySchedule.map((event) => (
+            <View key={event.id} style={styles.scheduleItem}>
+              <View style={styles.scheduleTime}>
+                <Ionicons 
+                  name={getEventIcon(event.type)} 
+                  size={16} 
+                  color={COLORS.gray[500]} 
+                />
+                <Text style={styles.timeText}>{event.startTime}</Text>
+              </View>
+              <View style={styles.scheduleContent}>
+                <Text style={styles.scheduleTitle}>{event.title}</Text>
+              </View>
             </View>
-            <View style={styles.scheduleContent}>
-              <Text style={styles.scheduleTitle}>{event.title}</Text>
-            </View>
-          </View>
-        ))}
+          ))
+        )}
       </View>
 
       {/* Projetos em Andamento */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Meus projetos</Text>
-          <TouchableOpacity>
-            <Ionicons name="add-outline" size={20} color={COLORS.primary[500]} />
+          <TouchableOpacity onPress={() => navigation.navigate('CreateProject')}>
+            <Ionicons name="add-outline" size={24} color={COLORS.primary[500]} />
           </TouchableOpacity>
         </View>
-        {projects.slice(0, 4).map(project => (
-          <View key={project.id} style={styles.projectItem}>
-            <View 
-              style={[
-                styles.projectPriority,
-                { backgroundColor: getPriorityColor(project.priority) }
-              ]} 
-            />
-            <View style={styles.projectContent}>
-              <View style={styles.projectHeader}>
-                <Text style={styles.projectName}>{project.name}</Text>
-                <Text style={styles.projectProgress}>{project.progress}%</Text>
+        {projects.length === 0 ? (
+          <Text style={styles.emptyText}>Nenhum projeto em andamento.</Text>
+        ) : (
+          projects.slice(0, 4).map(project => (
+            <View key={project.id} style={styles.projectItem}>
+              <View 
+                style={[
+                  styles.projectPriority,
+                  { backgroundColor: getPriorityColor(project.priority) }
+                ]} 
+              />
+              <View style={styles.projectContent}>
+                <View style={styles.projectHeader}>
+                  <Text style={styles.projectName}>{project.name}</Text>
+                  <Text style={styles.projectProgress}>{project.progress}%</Text>
+                </View>
+                <View style={styles.progressBar}>
+                  <View 
+                    style={[
+                      styles.progressFill,
+                      { 
+                        width: `${project.progress}%`,
+                        backgroundColor: COLORS.primary[500]
+                      }
+                    ]}
+                  />
+                </View>
+                <Text style={styles.projectDeadline}>
+                  Prazo: {new Date(project.deadline).toLocaleDateString('pt-BR')}
+                </Text>
               </View>
-              <View style={styles.progressBar}>
-                <View 
-                  style={[
-                    styles.progressFill,
-                    { 
-                      width: `${project.progress}%`,
-                      backgroundColor: COLORS.primary[500]
-                    }
-                  ]}
-                />
-              </View>
-              <Text style={styles.projectDeadline}>
-                Prazo: {new Date(project.deadline).toLocaleDateString('pt-BR')}
-              </Text>
             </View>
-          </View>
-        ))}
+          ))
+        )}
       </View>
-
-
-
     </ScrollView>
-    
   );
 }
 
@@ -287,9 +304,37 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    marginRight: THEME.spacing.md,
+    position: 'relative',
+    padding: 4,
+  },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: COLORS.error,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.white,
+  },
+  badgeText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   greeting: {
     fontSize: THEME.fontSize.xl,
     color: COLORS.gray[800],
+    fontWeight: 'bold',
   },
   date: {
     fontSize: THEME.fontSize.sm,
@@ -297,16 +342,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: COLORS.primary[500],
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     color: COLORS.white,
-    fontSize: THEME.fontSize.lg,
+    fontSize: THEME.fontSize.md,
+    fontWeight: 'bold',
   },
   summaryCards: {
     flexDirection: 'row',
@@ -329,6 +375,7 @@ const styles = StyleSheet.create({
   cardNumber: {
     fontSize: THEME.fontSize.xl,
     color: COLORS.gray[800],
+    fontWeight: 'bold',
   },
   cardLabel: {
     fontSize: THEME.fontSize.sm,
@@ -362,11 +409,17 @@ const styles = StyleSheet.create({
     color: COLORS.gray[800],
     flex: 1,
     marginLeft: THEME.spacing.sm,
+    fontWeight: '600',
+  },
+  seeAllText: {
+    fontSize: THEME.fontSize.sm,
+    color: COLORS.primary[500],
+    fontWeight: '500',
   },
   alertItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: COLORS.accent[50],
+    backgroundColor: COLORS.gray[50],
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
     marginBottom: THEME.spacing.sm,
@@ -432,6 +485,7 @@ const styles = StyleSheet.create({
   projectName: {
     fontSize: THEME.fontSize.md,
     color: COLORS.gray[800],
+    fontWeight: '500',
   },
   projectProgress: {
     fontSize: THEME.fontSize.sm,
@@ -441,5 +495,11 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.xs,
     color: COLORS.gray[600],
     marginTop: THEME.spacing.sm,
+  },
+  emptyText: {
+    fontSize: THEME.fontSize.sm,
+    color: COLORS.gray[400],
+    textAlign: 'center',
+    paddingVertical: THEME.spacing.md,
   },
 });

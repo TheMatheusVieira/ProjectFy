@@ -11,12 +11,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 // Types
-import { User } from '../../types';
+import { User, RootStackParamList } from '../../types';
 import { COLORS, THEME } from '../../constants/colors';
 
-export default function ProfileScreen(): JSX.Element {
+type ProfileScreenProps = {
+  navigation: StackNavigationProp<RootStackParamList, 'Main'>;
+};
+
+export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
   const [editData, setEditData] = useState({
@@ -189,6 +194,19 @@ export default function ProfileScreen(): JSX.Element {
           </View>
           <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
         </TouchableOpacity>
+
+        {user.role === 'admin' && (
+          <TouchableOpacity 
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('UserManagement')}
+          >
+            <View style={styles.menuItemLeft}>
+              <Ionicons name="shield-checkmark-outline" size={24} color={COLORS.primary[600]} />
+              <Text style={styles.menuItemText}>Gerenciar Usuários</Text>
+            </View>
+            <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.menuItem}>
           <View style={styles.menuItemLeft}>

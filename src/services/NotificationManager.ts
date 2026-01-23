@@ -1,0 +1,62 @@
+import { Alert } from '../types';
+import StorageService from './StorageService';
+import { v4 as uuidv4 } from 'uuid';
+
+class NotificationManager {
+    static async createProjectAlert(projectId: string, projectName: string, type: 'deadline' | 'status') {
+        const user = await StorageService.getCurrentUser();
+        if (!user) return;
+
+        const alert: Alert = {
+            id: uuidv4(),
+            userId: user.id,
+            projectId,
+            message: type === 'deadline'
+                ? `O prazo do projeto "${projectName}" está próximo!`
+                : `O status do projeto "${projectName}" foi atualizado.`,
+            type: type === 'deadline' ? 'warning' : 'info',
+            read: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        await StorageService.saveAlert(alert);
+    }
+
+    static async createTaskAlert(taskId: string, taskTitle: string, projectName: string) {
+        const user = await StorageService.getCurrentUser();
+        if (!user) return;
+
+        const alert: Alert = {
+            id: uuidv4(),
+            userId: user.id,
+            taskId,
+            message: `Nova tarefa atribuída: "${taskTitle}" no projeto "${projectName}"`,
+            type: 'info',
+            read: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        await StorageService.saveAlert(alert);
+    }
+
+    static async createSystemAlert(message: string, type: Alert['type'] = 'info') {
+        const user = await StorageService.getCurrentUser();
+        if (!user) return;
+
+        const alert: Alert = {
+            id: uuidv4(),
+            userId: user.id,
+            message,
+            type,
+            read: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        await StorageService.saveAlert(alert);
+    }
+}
+
+export default NotificationManager;

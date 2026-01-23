@@ -9,24 +9,20 @@ import {
   Platform,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, THEME } from '../../constants/colors';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/index';
+import { useAuth } from '../../context/AuthContext';
 
 type LoginScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
 };
 
-interface User {
-  email: string;
-  password: string;
-  name?: string;
-}
-
 export default function LoginScreen({ navigation }: LoginScreenProps) {
+  const { login } = useAuth();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -46,24 +42,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     setIsLoading(true);
 
     try {
-      const usersData = await AsyncStorage.getItem('users');
-      const usersList: User[] = usersData ? JSON.parse(usersData) : [];
+      const success = await login(email, password);
 
-      const user = usersList.find(
-        (u: User) => u.email === email && u.password === password
-      );
-
-      if (user) {
-        await AsyncStorage.setItem('userToken', 'logged_in');
-        await AsyncStorage.setItem('currentUser', JSON.stringify(user));
-
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
-        });
-      } else {
+      if (!success) {
         Alert.alert('Erro', 'E-mail ou senha incorretos');
       }
+      // Navegação é automática via AppNavigator reagindo ao estado do context
     } catch (error) {
       console.error('Erro no login:', error);
       Alert.alert('Erro', 'Erro ao fazer login. Tente novamente.');
@@ -84,7 +68,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Gestão IST</Text>
+          <Text style={styles.title}>ProjectFy</Text>
           <Text style={styles.subtitle}>Entre na sua conta</Text>
         </View>
 
@@ -139,9 +123,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
             onPress={handleLogin}
             disabled={isLoading}
           >
-            <Text style={styles.loginButtonText}>
-              {isLoading ? 'Entrando...' : 'Entrar'}
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator color={COLORS.white} />
+            ) : (
+              <Text style={styles.loginButtonText}>Entrar</Text>
+            )}
           </TouchableOpacity>
         </View>
 
