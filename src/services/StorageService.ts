@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { v4 as uuidv4 } from 'uuid';
-import { User, Project, Task, ScheduleEvent, Alert, Note, Attachment, Appointment, TimeLog, Purchase } from '../types';
+import { User, Project, Task, ScheduleEvent, Alert, Note, Attachment, Appointment, TimeLog, Purchase, UserSettings } from '../types';
 
 class StorageService {
   // Keys para o AsyncStorage
@@ -89,6 +89,43 @@ class StorageService {
       await AsyncStorage.setItem(this.KEYS.CURRENT_USER, JSON.stringify(user));
     } catch (error) {
       console.error('Erro ao definir usuário atual:', error);
+      throw error;
+    }
+  }
+
+  static getDefaultSettings(): UserSettings {
+    return {
+      notifications: {
+        enabled: true,
+        deadlines: true,
+        tasks: true,
+        appointments: true,
+      },
+      theme: 'system',
+      language: 'pt-BR',
+    };
+  }
+
+  static async updateUserSettings(userId: string, settings: UserSettings): Promise<void> {
+    try {
+      const users = await this.getUsers();
+      const userIndex = users.findIndex(u => u.id === userId);
+
+      if (userIndex >= 0) {
+        users[userIndex].settings = settings;
+        users[userIndex].updatedAt = new Date().toISOString();
+        await AsyncStorage.setItem(this.KEYS.USERS, JSON.stringify(users));
+
+        // Se for o usuário atual, atualizar também
+        const currentUser = await this.getCurrentUser();
+        if (currentUser && currentUser.id === userId) {
+          currentUser.settings = settings;
+          currentUser.updatedAt = users[userIndex].updatedAt;
+          await this.setCurrentUser(currentUser);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar configurações do usuário:', error);
       throw error;
     }
   }

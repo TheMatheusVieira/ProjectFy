@@ -14,6 +14,7 @@ export type RootStackParamList = {
   TimeTracking: { projectId: string; projectName: string };
   Alerts: undefined;
   CreateAppointment: { appointment?: Appointment; selectedDate?: string } | undefined;
+  Settings: undefined;
 };
 
 export type TabParamList = {
@@ -23,6 +24,17 @@ export type TabParamList = {
   Relatorios: undefined;
   Perfil: undefined;
 };
+
+export interface UserSettings {
+  notifications: {
+    enabled: boolean;
+    deadlines: boolean;
+    tasks: boolean;
+    appointments: boolean;
+  };
+  theme: 'light' | 'dark' | 'system';
+  language: 'pt-BR' | 'en-US';
+}
 
 // Tipos para usuário
 export type UserRole = 'admin' | 'collaborator';
@@ -39,6 +51,7 @@ export interface User {
   updatedAt: string;
   projects: string[]; // IDs dos projetos
   tasks: string[]; // IDs das tarefas
+  settings?: UserSettings;
 }
 
 // Tipos para projeto

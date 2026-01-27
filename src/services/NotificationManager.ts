@@ -57,6 +57,20 @@ class NotificationManager {
 
         await StorageService.saveAlert(alert);
     }
+
+    static async checkDeadlines() {
+        const user = await StorageService.getCurrentUser();
+        if (!user) return;
+
+        const projects = await StorageService.getUserProjects(user.id);
+        const today = new Date();
+
+        projects.forEach(project => {
+            if (project.deadline && new Date(project.deadline) < today) {
+                this.createProjectAlert(project.id, project.name, 'deadline');
+            }
+        });
+    }
 }
 
 export default NotificationManager;

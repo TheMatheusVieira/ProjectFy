@@ -11,17 +11,22 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 // Types
 import { User, RootStackParamList } from '../../types';
 import { COLORS, THEME } from '../../constants/colors';
+import StorageService from '../../services/StorageService';
+import { useAuth } from '../../context/AuthContext';
 
 type ProfileScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, 'Main'>;
 };
 
 export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.Element {
+  const { logout } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
   const [editData, setEditData] = useState({
@@ -36,14 +41,13 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
 
   const loadUserData = async (): Promise<void> => {
     try {
-      const currentUserData = await AsyncStorage.getItem('currentUser');
-      if (currentUserData) {
-        const userData: User = JSON.parse(currentUserData);
-        setUser(userData);
+      const currentUser = await StorageService.getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
         setEditData({
-          name: userData.name,
-          weeklyHours: userData.weeklyHours.toString(),
-          dailyHours: userData.dailyHours.toString(),
+          name: currentUser.name,
+          weeklyHours: currentUser.weeklyHours.toString(),
+          dailyHours: currentUser.dailyHours.toString(),
         });
       }
     } catch (error) {
@@ -62,7 +66,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
           style: 'destructive', 
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['userToken', 'currentUser']);
+              await logout();
               // A navegação será automaticamente atualizada pelo AppNavigator
             } catch (error) {
               console.error('Erro ao fazer logout:', error);
@@ -94,16 +98,8 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
         dailyHours: parseInt(editData.dailyHours),
       };
 
-      // Atualizar no AsyncStorage
-      await AsyncStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      
-      // Atualizar na lista de usuários
-      const users = await AsyncStorage.getItem('users');
-      const usersList: User[] = users ? JSON.parse(users) : [];
-      const updatedUsersList = usersList.map(u => 
-        u.id === user.id ? updatedUser : u
-      );
-      await AsyncStorage.setItem('users', JSON.stringify(updatedUsersList));
+      await StorageService.saveUser(updatedUser);
+      await StorageService.setCurrentUser(updatedUser);
 
       setUser(updatedUser);
       setEditModalVisible(false);
@@ -125,7 +121,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
           style: 'destructive', 
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(['users', 'projects', 'userToken', 'currentUser']);
+              await StorageService.clearAllData();
               Alert.alert('Sucesso', 'Todos os dados foram removidos!');
             } catch (error) {
               console.error('Erro ao limpar dados:', error);
@@ -135,6 +131,25 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
         }
       ]
     );
+  };
+
+  const handleExportData = async (): Promise<void> => {
+    try {
+      const data = await StorageService.exportData();
+      const jsonString = JSON.stringify(data, null, 2);
+      const fileUri = `${FileSystem.documentDirectory}projectfy_backup_${new Date().getTime()}.json`;
+      
+      await FileSystem.writeAsStringAsync(fileUri, jsonString);
+      
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert('Sucesso', 'Dados exportados para o armazenamento local.');
+      }
+    } catch (error) {
+      console.error('Erro ao exportar dados:', error);
+      Alert.alert('Erro', 'Não foi possível exportar os dados.');
+    }
   };
 
   if (!user) {
@@ -167,11 +182,11 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
       {/* Estatísticas */}
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{user.projects.length}</Text>
+          <Text style={styles.statNumber}>{user.projects?.length || 0}</Text>
           <Text style={styles.statLabel}>Projetos</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{user.tasks.length}</Text>
+          <Text style={styles.statNumber}>{user.tasks?.length || 0}</Text>
           <Text style={styles.statLabel}>Tarefas</Text>
         </View>
         <View style={styles.statItem}>
@@ -208,15 +223,21 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Settings')}
+        >
           <View style={styles.menuItemLeft}>
-            <Ionicons name="time-outline" size={24} color={COLORS.secondary[500]} />
-            <Text style={styles.menuItemText}>Configurar Horários</Text>
+            <Ionicons name="settings-outline" size={24} color={COLORS.secondary[500]} />
+            <Text style={styles.menuItemText}>Preferências</Text>
           </View>
           <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Settings')}
+        >
           <View style={styles.menuItemLeft}>
             <Ionicons name="notifications-outline" size={24} color={COLORS.accent[500]} />
             <Text style={styles.menuItemText}>Notificações</Text>
@@ -229,7 +250,10 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Dados e Backup</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={handleExportData}
+        >
           <View style={styles.menuItemLeft}>
             <Ionicons name="cloud-upload-outline" size={24} color={COLORS.primary[500]} />
             <Text style={styles.menuItemText}>Backup dos Dados</Text>
@@ -237,7 +261,10 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
           <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={handleExportData}
+        >
           <View style={styles.menuItemLeft}>
             <Ionicons name="download-outline" size={24} color={COLORS.secondary[500]} />
             <Text style={styles.menuItemText}>Exportar Relatórios</Text>

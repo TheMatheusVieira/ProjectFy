@@ -22,11 +22,13 @@ type DashboardScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Ma
 
 export default function DashboardScreen(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [todaySchedule, setTodaySchedule] = useState<ScheduleEvent[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [currentTime] = useState<Date>(new Date());
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [commitments, setCommitments] = useState<Appointment[]>([]);
 
   const navigation = useNavigation<DashboardScreenNavigationProp>();
 
@@ -57,6 +59,15 @@ export default function DashboardScreen(): JSX.Element {
         // Carregar alertas reais
         const userAlerts = await StorageService.getUserAlerts(currentUser.id);
         setAlerts(userAlerts);
+
+        // Carregar agendamentos de hoje
+        const userAppointments = await StorageService.getUserAppointments(currentUser.id);
+        const today = new Date().toISOString().split('T')[0];
+        const todayAppointments = userAppointments
+          .filter(app => app.date === today)
+          .sort((a, b) => a.time.localeCompare(b.time));
+        
+        setCommitments(todayAppointments);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -211,18 +222,18 @@ export default function DashboardScreen(): JSX.Element {
           <Text style={styles.sectionTitle}>Agenda de hoje</Text>
           <Ionicons name="chevron-forward-outline" size={16} color={COLORS.gray[400]} />
         </View>
-        {todaySchedule.length === 0 ? (
+        {commitments.length === 0 ? (
           <Text style={styles.emptyText}>Nenhum compromisso para hoje.</Text>
         ) : (
-          todaySchedule.map((event) => (
+          commitments.map((event) => (
             <View key={event.id} style={styles.scheduleItem}>
               <View style={styles.scheduleTime}>
                 <Ionicons 
-                  name={getEventIcon(event.type)} 
+                  name="calendar-outline" 
                   size={16} 
                   color={COLORS.gray[500]} 
                 />
-                <Text style={styles.timeText}>{event.startTime}</Text>
+                <Text style={styles.timeText}>{event.time}</Text>
               </View>
               <View style={styles.scheduleContent}>
                 <Text style={styles.scheduleTitle}>{event.title}</Text>
@@ -334,7 +345,6 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: THEME.fontSize.xl,
     color: COLORS.gray[800],
-    fontWeight: 'bold',
   },
   date: {
     fontSize: THEME.fontSize.sm,
@@ -375,7 +385,6 @@ const styles = StyleSheet.create({
   cardNumber: {
     fontSize: THEME.fontSize.xl,
     color: COLORS.gray[800],
-    fontWeight: 'bold',
   },
   cardLabel: {
     fontSize: THEME.fontSize.sm,
@@ -409,7 +418,7 @@ const styles = StyleSheet.create({
     color: COLORS.gray[800],
     flex: 1,
     marginLeft: THEME.spacing.sm,
-    fontWeight: '600',
+  
   },
   seeAllText: {
     fontSize: THEME.fontSize.sm,

@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import StorageService from '../services/StorageService';
 import { User, RegisterFormData } from '../types';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,11 +25,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   async function loadStorageData() {
     try {
-      const userToken = await AsyncStorage.getItem('userToken');
+      const userToken = await StorageService.getUserToken();
       const userData = await StorageService.getCurrentUser();
 
       if (userToken && userData) {
         setUser(userData);
+      } else {
+        // Garantir que se um faltar, limpamos ambos para evitar estado inconsistente
+        await StorageService.removeAuthData();
+        setUser(null);
       }
     } catch (error) {
       console.error('Erro ao carregar dados de autenticação:', error);
@@ -41,15 +44,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   async function login(email: string, password: string): Promise<boolean> {
     try {
-      const usersData = await AsyncStorage.getItem('users');
-      const usersList: User[] = usersData ? JSON.parse(usersData) : [];
+      const usersList = await StorageService.getUsers();
 
       const foundUser = usersList.find(
         (u) => u.email === email && u.password === password
       );
 
       if (foundUser) {
-        await AsyncStorage.setItem('userToken', 'logged_in');
+        await StorageService.setUserToken('logged_in');
         await StorageService.setCurrentUser(foundUser);
         setUser(foundUser);
         return true;
@@ -63,8 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   async function register(userData: RegisterFormData): Promise<boolean> {
     try {
-      const usersData = await AsyncStorage.getItem('users');
-      const usersList: User[] = usersData ? JSON.parse(usersData) : [];
+      const usersList = await StorageService.getUsers();
 
       if (usersList.some(u => u.email === userData.email)) {
         return false;
@@ -82,13 +83,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedAt: new Date().toISOString(),
         projects: [],
         tasks: [],
+        settings: StorageService.getDefaultSettings(),
       };
 
-      usersList.push(newUser);
-      await AsyncStorage.setItem('users', JSON.stringify(usersList));
+      await StorageService.saveUser(newUser);
       
       // Auto login após registro
-      await AsyncStorage.setItem('userToken', 'logged_in');
+      await StorageService.setUserToken('logged_in');
       await StorageService.setCurrentUser(newUser);
       setUser(newUser);
       
@@ -100,8 +101,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   async function logout() {
-    await StorageService.removeAuthData();
-    setUser(null);
+    try {
+      await StorageService.removeAuthData();
+      setUser(null);
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   }
 
   async function updateUser(userData: Partial<User>) {

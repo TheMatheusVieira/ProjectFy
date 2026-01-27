@@ -33,7 +33,7 @@ export default function ReportsScreen() {
     projectsByStatus: [] as any[],
     taskCompletion: 0,
     totalHours: 0,
-    hoursByProject: [] as any[],
+    hoursByProject: { labels: [] as string[], datasets: [{ data: [] as number[] }] },
   });
 
   const loadData = async () => {

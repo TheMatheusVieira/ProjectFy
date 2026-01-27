@@ -1,12 +1,9 @@
-// components/ProjectCard.tsx
-
 import React, { JSX } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Project } from '../types'; // ⚠️ ATENÇÃO: Verifique se o caminho para seus tipos está correto
-import { COLORS, THEME } from '../constants/colors'; // ⚠️ ATENÇÃO: Verifique se o caminho para suas constantes está correto
+import { Project } from '../types';
+import { COLORS, THEME } from '../constants/colors';
 
-// Funções de ajuda que são específicas para a exibição do card
 const getPriorityColor = (priority: Project['priority']): string => {
   switch (priority) {
     case 'high': return COLORS.error;
@@ -91,7 +88,6 @@ export default function ProjectCard({ project, onDelete }: ProjectCardProps): JS
   );
 }
 
-// Estilos que pertencem apenas ao card de projeto
 const styles = StyleSheet.create({
     projectCard: {
         backgroundColor: COLORS.white,

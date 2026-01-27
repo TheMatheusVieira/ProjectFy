@@ -183,17 +183,17 @@ const CreateProjectScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.mainTitle}>{editingProject ? 'Editar Projeto' : 'Novo Projeto'}</Text>
+                <Text style={styles.mainTitle}>{editingProject ? 'Editar projeto' : 'Novo projeto'}</Text>
                 <Text style={styles.subtitle}>Passo {step} de 3</Text>
 
 
                 {/* PASSO 1: INFORMAÇÕES BÁSICAS */}
                 {step === 1 && (
                     <View>
-                        <Text style={styles.stepTitle}>Informações Básicas</Text>
+                        <Text style={styles.stepTitle}>Informações básicas</Text>
                         <TextInput 
                             style={styles.input} 
-                            placeholder="Nome do Projeto *" 
+                            placeholder="Nome do projeto" 
                             value={projectData.name} 
                             onChangeText={text => setProjectData(p => ({ ...p, name: text }))} 
                         />
@@ -205,7 +205,7 @@ const CreateProjectScreen = () => {
                         />
                         <TextInput 
                             style={[styles.input, styles.textArea]} 
-                            placeholder="Descrição do Projeto *" 
+                            placeholder="Descrição do projeto" 
                             multiline 
                             value={projectData.description} 
                             onChangeText={text => setProjectData(p => ({ ...p, description: text }))} 

@@ -25,6 +25,7 @@ import CreateAppointmentScreen from "../screens/calendar/CreateAppointmentScreen
 import TimeTrackingScreen from "../screens/timer/TimeTrackingScreen";
 import ReportsScreen from "../screens/dashboard/ReportsScreen";
 import ProjectPurchasesScreen from "../screens/projects/ProjectPurchasesScreen";
+import SettingsScreen from "../screens/profile/SettingsScreen";
 
 // Constants
 import { COLORS } from "../constants/colors";
@@ -176,6 +177,11 @@ export default function AppNavigator() {
             name="TimeTracking"
             component={TimeTrackingScreen}
             options={({ route }) => ({ title: `Cronômetro: ${route.params.projectName}` })}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
+            options={{ title: "Configurações" }}
           />
         </>
       ) : (
