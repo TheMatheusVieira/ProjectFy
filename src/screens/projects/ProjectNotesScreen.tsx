@@ -17,7 +17,7 @@ import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { COLORS, THEME } from '../../constants/colors';
 import StorageService from '../../services/StorageService';
 import { Note, RootStackParamList, User } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 
 type ProjectNotesScreenRouteProp = RouteProp<RootStackParamList, 'ProjectNotes'>;
 
@@ -85,7 +85,7 @@ export default function ProjectNotesScreen() {
     try {
       const now = new Date().toISOString();
       const note: Note = {
-        id: editingNote?.id || uuidv4(),
+        id: editingNote?.id || uuid.v4() as string,
         projectId,
         userId: user.id,
         title: noteTitle.trim(),

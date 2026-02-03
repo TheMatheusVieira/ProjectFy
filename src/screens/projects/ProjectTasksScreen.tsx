@@ -18,7 +18,7 @@ import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { COLORS, THEME } from '../../constants/colors';
 import StorageService from '../../services/StorageService';
 import { Task, RootStackParamList, User, Project } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 
 type ProjectTasksScreenRouteProp = RouteProp<RootStackParamList, 'ProjectTasks'>;
 
@@ -92,7 +92,7 @@ export default function ProjectTasksScreen() {
     try {
       const now = new Date().toISOString();
       const task: Task = {
-        id: editingTask?.id || uuidv4(),
+        id: editingTask?.id || uuid.v4() as string,
         projectId,
         userId: user.id,
         title: taskTitle.trim(),

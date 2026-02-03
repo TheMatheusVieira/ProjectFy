@@ -15,7 +15,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { COLORS, THEME } from '../../constants/colors';
 import StorageService from '../../services/StorageService';
 import { Appointment, Project, User, RootStackParamList } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 
 type CreateAppointmentScreenRouteProp = RouteProp<RootStackParamList, 'CreateAppointment'>;
 
@@ -77,7 +77,7 @@ export default function CreateAppointmentScreen() {
     try {
       const now = new Date().toISOString();
       const appointment: Appointment = {
-        id: editingAppointment?.id || uuidv4(),
+        id: editingAppointment?.id || uuid.v4() as string,
         userId: user.id,
         title: title.trim(),
         description: description.trim(),

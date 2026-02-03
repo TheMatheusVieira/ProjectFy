@@ -1,6 +1,6 @@
 import { Alert } from '../types';
 import StorageService from './StorageService';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 
 class NotificationManager {
     static async createProjectAlert(projectId: string, projectName: string, type: 'deadline' | 'status') {
@@ -8,7 +8,7 @@ class NotificationManager {
         if (!user) return;
 
         const alert: Alert = {
-            id: uuidv4(),
+            id: uuid.v4() as string,
             userId: user.id,
             projectId,
             message: type === 'deadline'
@@ -28,7 +28,7 @@ class NotificationManager {
         if (!user) return;
 
         const alert: Alert = {
-            id: uuidv4(),
+            id: uuid.v4() as string,
             userId: user.id,
             taskId,
             message: `Nova tarefa atribuída: "${taskTitle}" no projeto "${projectName}"`,
@@ -46,7 +46,7 @@ class NotificationManager {
         if (!user) return;
 
         const alert: Alert = {
-            id: uuidv4(),
+            id: uuid.v4() as string,
             userId: user.id,
             message,
             type,

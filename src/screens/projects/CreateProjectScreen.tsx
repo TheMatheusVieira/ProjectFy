@@ -15,7 +15,7 @@ import { Project, User, RootStackParamList, ProjectStatus } from "../../types";
 import StorageService from "../../services/StorageService";
 import NotificationManager from "../../services/NotificationManager";
 import { COLORS, THEME } from "../../constants/colors";
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 
 type CreateProjectScreenRouteProp = RouteProp<RootStackParamList, 'CreateProject'>;
 
@@ -73,7 +73,7 @@ const CreateProjectScreen = () => {
             return;
         }
         const newMember: TeamMember = {
-            id: uuidv4(),
+            id: uuid.v4() as string,
             name: memberName.trim(),
             role: memberRole.trim(),
         };
@@ -110,7 +110,7 @@ const CreateProjectScreen = () => {
         try {
             const now = new Date().toISOString();
             const project: Project = {
-                id: editingProject?.id || uuidv4(),
+                id: editingProject?.id || uuid.v4() as string,
                 name: projectData.name.trim(),
                 description: projectData.description.trim(),
                 progress: editingProject?.progress || 0,

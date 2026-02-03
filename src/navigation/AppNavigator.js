@@ -134,6 +134,11 @@ export default function AppNavigator() {
             options={{ headerShown: false }}
           />
           <Stack.Screen
+            name="Loading"
+            component={LoadingScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
             name="CreateProject"
             component={CreateProjectScreen}
             options={{ title: "Novo Projeto" }}

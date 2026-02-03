@@ -18,7 +18,7 @@ import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { COLORS, THEME } from '../../constants/colors';
 import StorageService from '../../services/StorageService';
 import { Purchase, RootStackParamList, Project } from '../../types';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 
 type ProjectPurchasesScreenRouteProp = RouteProp<RootStackParamList, 'ProjectPurchases'>;
 
@@ -62,7 +62,7 @@ export default function ProjectPurchasesScreen() {
 
     try {
       const purchase: Purchase = {
-        id: editingPurchase?.id || uuidv4(),
+        id: editingPurchase?.id || uuid.v4() as string,
         projectId,
         item: item.trim(),
         quantity: parseInt(quantity),

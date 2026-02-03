@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 import { User, Project, Task, ScheduleEvent, Alert, Note, Attachment, Appointment, TimeLog, Purchase, UserSettings } from '../types';
 
 class StorageService {
@@ -186,7 +186,7 @@ class StorageService {
 
       const projectToSave = {
         ...project,
-        id: project.id || uuidv4(),
+        id: project.id || uuid.v4() as string,
         updatedAt: new Date().toISOString(),
       };
 
@@ -268,7 +268,7 @@ class StorageService {
 
       const taskToSave = {
         ...task,
-        id: task.id || uuidv4(),
+        id: task.id || uuid.v4() as string,
         updatedAt: new Date().toISOString(),
       };
 
@@ -335,7 +335,7 @@ class StorageService {
 
       const noteToSave = {
         ...note,
-        id: note.id || uuidv4(),
+        id: note.id || uuid.v4() as string,
         updatedAt: new Date().toISOString(),
       };
 
@@ -379,7 +379,7 @@ class StorageService {
     try {
       await this.ensureAttachmentsDir();
 
-      const id = uuidv4();
+      const id = uuid.v4() as string;
       const extension = fileName.split('.').pop();
       const newFileName = `${id}.${extension}`;
       const newUri = `${this.ATTACHMENTS_DIR}${newFileName}`;
@@ -488,7 +488,7 @@ class StorageService {
 
       const appointmentToSave = {
         ...appointment,
-        id: appointment.id || uuidv4(),
+        id: appointment.id || uuid.v4() as string,
         updatedAt: new Date().toISOString(),
       };
 
@@ -555,7 +555,7 @@ class StorageService {
 
       const logToSave = {
         ...log,
-        id: log.id || uuidv4(),
+        id: log.id || uuid.v4() as string,
         synced: false,
         updatedAt: new Date().toISOString(),
       };
@@ -623,7 +623,7 @@ class StorageService {
 
       const purchaseToSave = {
         ...purchase,
-        id: purchase.id || uuidv4(),
+        id: purchase.id || uuid.v4() as string,
         synced: false,
         updatedAt: new Date().toISOString(),
       };
@@ -691,7 +691,7 @@ class StorageService {
 
       const eventToSave = {
         ...event,
-        id: event.id || uuidv4(),
+        id: event.id || uuid.v4() as string,
         updatedAt: new Date().toISOString(),
       };
 
@@ -747,7 +747,7 @@ class StorageService {
 
       const alertToSave = {
         ...alert,
-        id: alert.id || uuidv4(),
+        id: alert.id || uuid.v4() as string,
         updatedAt: new Date().toISOString(),
       };
 

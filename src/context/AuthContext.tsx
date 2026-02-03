@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import StorageService from '../services/StorageService';
 import { User, RegisterFormData } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import uuid from 'react-native-uuid';
 
 interface AuthContextData {
   user: User | null;
@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const newUser: User = {
-        id: uuidv4(),
+        id: uuid.v4() as string,
         name: userData.name,
         email: userData.email,
         password: userData.password,

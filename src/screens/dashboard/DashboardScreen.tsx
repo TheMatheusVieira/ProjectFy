@@ -17,8 +17,14 @@ import { COLORS, THEME } from '../../constants/colors';
 import StorageService from '../../services/StorageService';
 import NotificationManager from '../../services/NotificationManager';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { TabParamList } from '../../types';
 
-type DashboardScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
+type DashboardScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Dashboard'>,
+  StackNavigationProp<RootStackParamList>
+>;
 
 export default function DashboardScreen(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
@@ -217,11 +223,14 @@ export default function DashboardScreen(): JSX.Element {
 
       {/* Agenda do dia */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="calendar-outline" size={20} color={COLORS.secondary[500]} />
-          <Text style={styles.sectionTitle}>Agenda de hoje</Text>
-          <Ionicons name="chevron-forward-outline" size={16} color={COLORS.gray[400]} />
-        </View>
+          <TouchableOpacity 
+            style={styles.sectionHeader}
+            onPress={() => navigation.navigate('Agenda')}
+          >
+            <Ionicons name="calendar-outline" size={20} color={COLORS.secondary[500]} />
+            <Text style={styles.sectionTitle}>Agenda de hoje</Text>
+            <Ionicons name="chevron-forward-outline" size={16} color={COLORS.gray[400]} />
+          </TouchableOpacity>
         {commitments.length === 0 ? (
           <Text style={styles.emptyText}>Nenhum compromisso para hoje.</Text>
         ) : (
@@ -245,12 +254,15 @@ export default function DashboardScreen(): JSX.Element {
 
       {/* Projetos em Andamento */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
+        <TouchableOpacity 
+          style={styles.sectionHeader}
+          onPress={() => navigation.navigate('Projetos')}
+        >
           <Text style={styles.sectionTitle}>Meus projetos</Text>
           <TouchableOpacity onPress={() => navigation.navigate('CreateProject')}>
             <Ionicons name="add-outline" size={24} color={COLORS.primary[500]} />
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
         {projects.length === 0 ? (
           <Text style={styles.emptyText}>Nenhum projeto em andamento.</Text>
         ) : (
