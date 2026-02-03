@@ -226,7 +226,7 @@ export default function ProjectNotesScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {editingNote ? 'Editar Anotação' : 'Nova Anotação'}
+                {editingNote ? 'Editar anotação' : 'Nova anotação'}
               </Text>
               <TouchableOpacity onPress={closeModal}>
                 <Ionicons name="close" size={24} color={COLORS.gray[600]} />
@@ -234,21 +234,30 @@ export default function ProjectNotesScreen() {
             </View>
 
             <View style={styles.modalBody}>
-              <TextInput
-                style={styles.titleInput}
-                placeholder="Título"
-                value={noteTitle}
-                onChangeText={setNoteTitle}
-                placeholderTextColor={COLORS.gray[400]}
-              />
-              <TextInput
-                style={styles.contentInput}
-                placeholder="Comece a escrever..."
-                value={noteContent}
-                onChangeText={setNoteContent}
-                multiline
-                placeholderTextColor={COLORS.gray[400]}
-              />
+              <Text style={[styles.label, editingNote && { marginTop: 0 }]}>Título da anotação *</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="document-text-outline" size={20} color={COLORS.gray[400]} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex: Requisitos do cliente"
+                  value={noteTitle}
+                  onChangeText={setNoteTitle}
+                  placeholderTextColor={COLORS.gray[300]}
+                />
+              </View>
+
+              <Text style={styles.label}>Conteúdo *</Text>
+              <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                <Ionicons name="reader-outline" size={20} color={COLORS.gray[400]} style={[styles.inputIcon, { marginTop: 12 }]} />
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Comece a escrever suas ideias aqui..."
+                  value={noteContent}
+                  onChangeText={setNoteContent}
+                  multiline
+                  placeholderTextColor={COLORS.gray[300]}
+                />
+              </View>
             </View>
 
             <View style={styles.modalFooter}>
@@ -366,16 +375,21 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopLeftRadius: THEME.borderRadius.xl,
     borderTopRightRadius: THEME.borderRadius.xl,
-    height: '85%',
+    maxHeight: '90%',
+    paddingBottom: 10,
     ...THEME.shadows.lg,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: THEME.spacing.lg,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray[100],
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: THEME.borderRadius.xl,
+    borderTopRightRadius: THEME.borderRadius.xl,
   },
   modalTitle: {
     fontSize: THEME.fontSize.lg,
@@ -383,26 +397,51 @@ const styles = StyleSheet.create({
     color: COLORS.gray[800],
   },
   modalBody: {
-    flex: 1,
-    padding: THEME.spacing.lg,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: 10,
+    backgroundColor: COLORS.white,
   },
-  titleInput: {
-    fontSize: THEME.fontSize.xl,
+  label: {
+    fontSize: 13,
     fontWeight: 'bold',
-    color: COLORS.gray[800],
-    marginBottom: THEME.spacing.md,
-  },
-  contentInput: {
-    fontSize: THEME.fontSize.md,
     color: COLORS.gray[700],
-    lineHeight: 24,
+    marginBottom: 4,
+    marginTop: 8,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.gray[50],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.gray[100],
+    paddingHorizontal: 12,
+    height: 48,
+    marginBottom: 4,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
     flex: 1,
+    fontSize: 16,
+    color: COLORS.gray[800],
+  },
+  textAreaContainer: {
+    height: 200,
+    alignItems: 'flex-start',
+  },
+  textArea: {
+    height: '100%',
+    paddingTop: 12,
     textAlignVertical: 'top',
   },
   modalFooter: {
-    padding: THEME.spacing.lg,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: COLORS.gray[100],
+    backgroundColor: COLORS.white,
   },
   saveButton: {
     backgroundColor: COLORS.primary[500],

@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Dashboard: undefined;
   UserManagement: undefined;
   CreateProject: { project?: Project } | undefined;
+  AllNotes: undefined;
   ProjectNotes: { projectId: string; projectName: string };
   ProjectTasks: { projectId: string; projectName: string };
   ProjectAttachments: { projectId: string; projectName: string };
@@ -42,8 +43,8 @@ export type UserRole = 'admin' | 'collaborator';
 export interface User {
   id: string;
   name: string;
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   role: UserRole;
   weeklyHours: number;
   dailyHours: number;
@@ -51,6 +52,7 @@ export interface User {
   updatedAt: string;
   projects: string[]; // IDs dos projetos
   tasks: string[]; // IDs das tarefas
+  avatar?: string;
   settings?: UserSettings;
 }
 
@@ -239,7 +241,7 @@ export interface AppointmentFormData {
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (name: string, email: string) => Promise<boolean>;
   register: (userData: RegisterFormData) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;

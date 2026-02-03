@@ -192,7 +192,7 @@ export default function ReportsScreen() {
 
       {/* Gráfico de Status de Projetos */}
       <View style={styles.chartSection}>
-        <Text style={styles.chartTitle}>Status dos Projetos</Text>
+        <Text style={styles.chartTitle}>Status dos projetos</Text>
         {stats.projectsByStatus.length > 0 ? (
           <PieChart
             data={stats.projectsByStatus}
@@ -211,7 +211,7 @@ export default function ReportsScreen() {
 
       {/* Gráfico de Horas por Projeto */}
       <View style={styles.chartSection}>
-        <Text style={styles.chartTitle}>Horas por Projeto (Top 5)</Text>
+        <Text style={styles.chartTitle}>Horas por projeto</Text>
         {stats.hoursByProject.labels.length > 0 ? (
           <BarChart
             data={stats.hoursByProject}

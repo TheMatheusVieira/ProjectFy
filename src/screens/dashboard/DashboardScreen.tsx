@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -34,6 +35,8 @@ export default function DashboardScreen(): JSX.Element {
   const [currentTime] = useState<Date>(new Date());
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectHours, setProjectHours] = useState<Record<string, number>>({});
+  const [totalNotes, setTotalNotes] = useState(0);
   const [commitments, setCommitments] = useState<Appointment[]>([]);
 
   const navigation = useNavigation<DashboardScreenNavigationProp>();
@@ -61,6 +64,18 @@ export default function DashboardScreen(): JSX.Element {
         // Carregar projetos do usuário
         const userProjects = await StorageService.getUserProjects(currentUser.id);
         setProjects(userProjects);
+
+        // Carregar logs de tempo e calcular totais por projeto
+        const allLogs = await StorageService.getTimeLogs();
+        const hoursMap: Record<string, number> = {};
+        allLogs.forEach(log => {
+          hoursMap[log.projectId] = (hoursMap[log.projectId] || 0) + log.duration;
+        });
+        setProjectHours(hoursMap);
+
+        // Carregar total de notas
+        const allNotes = await StorageService.getNotes();
+        setTotalNotes(allNotes.length);
 
         // Carregar alertas reais
         const userAlerts = await StorageService.getUserAlerts(currentUser.id);
@@ -107,6 +122,15 @@ export default function DashboardScreen(): JSX.Element {
       case 'medium': return COLORS.warning;
       default: return COLORS.success;
     }
+  };
+
+  const calculateProjectProgress = (project: Project): number => {
+    if (!project.estimatedHours || project.estimatedHours === 0) {
+      return project.progress || 0;
+    }
+    const workedHours = (projectHours[project.id] || 0) / 3600;
+    const progress = (workedHours / project.estimatedHours) * 100;
+    return Math.min(Math.round(progress), 100);
   };
 
   const getEventIcon = (type: ScheduleEvent['type']): keyof typeof Ionicons.glyphMap => {
@@ -164,15 +188,18 @@ export default function DashboardScreen(): JSX.Element {
               )}
             </TouchableOpacity>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user.name.charAt(0).toUpperCase()}
-              </Text>
+              {user.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {user.name.charAt(0).toUpperCase()}
+                </Text>
+              )}
             </View>
           </View>
         </View>
       </View>
 
-      {/* Cards de resumo */}
       <View style={styles.summaryCards}>
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -181,6 +208,8 @@ export default function DashboardScreen(): JSX.Element {
           </View>
           <Text style={styles.cardLabel}>Projetos ativos</Text>
         </View>
+
+        
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -207,7 +236,7 @@ export default function DashboardScreen(): JSX.Element {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="alert-circle-outline" size={20} color={COLORS.warning} />
-            <Text style={styles.sectionTitle}>Alertas Recentes</Text>
+            <Text style={styles.sectionTitle}>Alertas recentes</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Alerts')}>
               <Text style={styles.seeAllText}>Ver todos</Text>
             </TouchableOpacity>
@@ -220,6 +249,17 @@ export default function DashboardScreen(): JSX.Element {
           ))}
         </View>
       )}
+
+      <TouchableOpacity 
+          style={styles.card}
+          onPress={() => navigation.navigate('AllNotes')}
+        >
+          <View style={styles.cardHeader}>
+            <Ionicons name="document-text-outline" size={24} color={COLORS.info} />
+            <Text style={styles.cardNumber}>{totalNotes}</Text>
+          </View>
+          <Text style={styles.cardLabel}>Minhas notas</Text>
+        </TouchableOpacity>
 
       {/* Agenda do dia */}
       <View style={styles.section}>
@@ -277,14 +317,14 @@ export default function DashboardScreen(): JSX.Element {
               <View style={styles.projectContent}>
                 <View style={styles.projectHeader}>
                   <Text style={styles.projectName}>{project.name}</Text>
-                  <Text style={styles.projectProgress}>{project.progress}%</Text>
+                  <Text style={styles.projectProgress}>{calculateProjectProgress(project)}%</Text>
                 </View>
                 <View style={styles.progressBar}>
                   <View 
                     style={[
                       styles.progressFill,
                       { 
-                        width: `${project.progress}%`,
+                        width: `${calculateProjectProgress(project)}%`,
                         backgroundColor: COLORS.primary[500]
                       }
                     ]}
@@ -376,6 +416,11 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.md,
     fontWeight: 'bold',
   },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
   summaryCards: {
     flexDirection: 'row',
     gap: THEME.spacing.md,
@@ -387,6 +432,7 @@ const styles = StyleSheet.create({
     borderRadius: THEME.borderRadius.lg,
     padding: THEME.spacing.md,
     ...THEME.shadows.sm,
+    marginBottom: THEME.spacing.md,
   },
   cardHeader: {
     flexDirection: 'row',

@@ -209,7 +209,7 @@ export default function ProjectPurchasesScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{editingPurchase ? 'Editar Item' : 'Novo Item'}</Text>
+              <Text style={styles.modalTitle}>{editingPurchase ? 'Editar item' : 'Novo item'}</Text>
               <TouchableOpacity onPress={closeModal}>
                 <Ionicons name="close" size={24} color={COLORS.gray[600]} />
               </TouchableOpacity>
@@ -219,7 +219,7 @@ export default function ProjectPurchasesScreen() {
               <Text style={styles.label}>Item *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Ex: Cimento, Tinta, etc."
+                placeholder="Insira o item que será comprado"
                 value={item}
                 onChangeText={setItem}
               />

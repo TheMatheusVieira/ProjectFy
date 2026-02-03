@@ -77,7 +77,7 @@ export default function SettingsScreen() {
         
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Habilitar Notificações</Text>
+            <Text style={styles.settingLabel}>Habilitar notificações</Text>
             <Text style={styles.settingDesc}>Receber alertas do sistema</Text>
           </View>
           <Switch
@@ -92,7 +92,7 @@ export default function SettingsScreen() {
           <>
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Prazos de Projetos</Text>
+                <Text style={styles.settingLabel}>Prazos de projetos</Text>
                 <Text style={styles.settingDesc}>Alertas quando um prazo estiver próximo</Text>
               </View>
               <Switch
@@ -105,7 +105,7 @@ export default function SettingsScreen() {
 
             <View style={styles.settingItem}>
               <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Novas Tarefas</Text>
+                <Text style={styles.settingLabel}>Novas tarefas</Text>
                 <Text style={styles.settingDesc}>Alertas ao receber novas tarefas</Text>
               </View>
               <Switch
@@ -154,7 +154,7 @@ export default function SettingsScreen() {
           <View style={styles.menuItemLeft}>
             <Ionicons name="language-outline" size={24} color={COLORS.secondary[500]} />
             <View style={styles.menuItemInfo}>
-              <Text style={styles.menuItemText}>Idioma do App</Text>
+              <Text style={styles.menuItemText}>Idioma do app</Text>
               <Text style={styles.menuItemSubtext}>
                 {settings.language === 'pt-BR' ? 'Português (Brasil)' : 'English (US)'}
               </Text>

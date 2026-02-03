@@ -35,13 +35,41 @@ const CreateProjectScreen = () => {
     const [step, setStep] = useState(1);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+    const formatDateToBR = (date: string) => {
+        if (!date) return '';
+        if (date.includes('/')) return date;
+        const [year, month, day] = date.split('-');
+        return `${day}/${month}/${year}`;
+    };
+
+    const formatDateToISO = (date: string) => {
+        if (!date) return '';
+        const [day, month, year] = date.split('/');
+        return `${year}-${month}-${day}`;
+    };
+
+    const applyDateMask = (text: string) => {
+        // Remove tudo que não for número
+        const cleaned = text.replace(/\D/g, '');
+        
+        // Aplica a máscara DD/MM/AAAA
+        let masked = cleaned;
+        if (cleaned.length > 2) {
+            masked = cleaned.substring(0, 2) + '/' + cleaned.substring(2);
+        }
+        if (cleaned.length > 4) {
+            masked = masked.substring(0, 5) + '/' + masked.substring(5, 9);
+        }
+        return masked;
+    };
+
     const [projectData, setProjectData] = useState({
         name: editingProject?.name || '',
         company: editingProject?.company || '',
         description: editingProject?.description || '',
         estimatedHours: editingProject?.estimatedHours?.toString() || '0',
-        startDate: editingProject?.startDate || new Date().toISOString().split('T')[0],
-        deadline: editingProject?.deadline || '',
+        startDate: editingProject ? formatDateToBR(editingProject.startDate) : formatDateToBR(new Date().toISOString().split('T')[0]),
+        deadline: editingProject ? formatDateToBR(editingProject.deadline) : '',
         priority: editingProject?.priority || 'medium' as Priority,
         status: editingProject?.status || 'planning' as ProjectStatus,
         team: editingProject?.team || [] as TeamMember[],
@@ -100,10 +128,10 @@ const CreateProjectScreen = () => {
             return;
         }
 
-        // Validar formato da data
-        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        // Validar formato da data (DD/MM/AAAA)
+        const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
         if (!dateRegex.test(projectData.deadline) || !dateRegex.test(projectData.startDate)) {
-            Alert.alert("Formato Inválido", "Use o formato AAAA-MM-DD para as datas.");
+            Alert.alert("Formato Inválido", "Use o formato DD/MM/AAAA para as datas.");
             return;
         }
 
@@ -114,8 +142,8 @@ const CreateProjectScreen = () => {
                 name: projectData.name.trim(),
                 description: projectData.description.trim(),
                 progress: editingProject?.progress || 0,
-                startDate: projectData.startDate,
-                deadline: projectData.deadline,
+                startDate: formatDateToISO(projectData.startDate),
+                deadline: formatDateToISO(projectData.deadline),
                 priority: projectData.priority,
                 status: projectData.status,
                 createdAt: editingProject?.createdAt || now,
@@ -164,9 +192,9 @@ const CreateProjectScreen = () => {
                     Alert.alert('Campo Obrigatório', 'Datas de início e prazo final são obrigatórias.');
                     return false;
                 }
-                const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
                 if (!dateRegex.test(projectData.deadline) || !dateRegex.test(projectData.startDate)) {
-                    Alert.alert("Formato Inválido", "Use o formato AAAA-MM-DD para as datas.");
+                    Alert.alert("Formato Inválido", "Use o formato DD/MM/AAAA para as datas.");
                     return false;
                 }
                 break;
@@ -180,169 +208,301 @@ const CreateProjectScreen = () => {
         }
     };
 
+    const renderProgressIndicator = () => (
+        <View style={styles.progressContainer}>
+            <View style={styles.stepsRow}>
+                {[1, 2, 3].map((s) => (
+                    <React.Fragment key={s}>
+                        <View style={[
+                            styles.stepCircle,
+                            step >= s ? styles.stepCircleActive : styles.stepCircleInactive
+                        ]}>
+                            {step > s ? (
+                                <Ionicons name="checkmark" size={16} color={COLORS.white} />
+                            ) : (
+                                <Text style={[
+                                    styles.stepNumber,
+                                    step >= s ? styles.stepNumberActive : styles.stepNumberInactive
+                                ]}>{s}</Text>
+                            )}
+                        </View>
+                        {s < 3 && <View style={[
+                            styles.stepLine,
+                            step > s ? styles.stepLineActive : styles.stepLineInactive
+                        ]} />}
+                    </React.Fragment>
+                ))}
+            </View>
+            <View style={styles.stepsLabels}>
+                <Text style={[styles.stepLabel, step >= 1 && styles.stepLabelActive]}>Básico</Text>
+                <Text style={[styles.stepLabel, step >= 2 && styles.stepLabelActive]}>Prazos</Text>
+                <Text style={[styles.stepLabel, step >= 3 && styles.stepLabelActive]}>Equipe</Text>
+            </View>
+        </View>
+    );
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.mainTitle}>{editingProject ? 'Editar projeto' : 'Novo projeto'}</Text>
-                <Text style={styles.subtitle}>Passo {step} de 3</Text>
+            <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+                <View style={styles.header}>
+                    <Text style={styles.mainTitle}>{editingProject ? 'Editar projeto' : 'Novo projeto'}</Text>
+                    <Text style={styles.subtitle}>
+                        {step === 1 && "Informações principais do projeto"}
+                        {step === 2 && "Configure o tempo e prioridade"}
+                        {step === 3 && "Quem fará parte da jornada?"}
+                    </Text>
+                </View>
 
+                {renderProgressIndicator()}
 
-                {/* PASSO 1: INFORMAÇÕES BÁSICAS */}
-                {step === 1 && (
-                    <View>
-                        <Text style={styles.stepTitle}>Informações básicas</Text>
-                        <TextInput 
-                            style={styles.input} 
-                            placeholder="Nome do projeto" 
-                            value={projectData.name} 
-                            onChangeText={text => setProjectData(p => ({ ...p, name: text }))} 
-                        />
-                        <TextInput 
-                            style={styles.input} 
-                            placeholder="Empresa / Cliente" 
-                            value={projectData.company} 
-                            onChangeText={text => setProjectData(p => ({ ...p, company: text }))} 
-                        />
-                        <TextInput 
-                            style={[styles.input, styles.textArea]} 
-                            placeholder="Descrição do projeto" 
-                            multiline 
-                            value={projectData.description} 
-                            onChangeText={text => setProjectData(p => ({ ...p, description: text }))} 
-                        />
-                        
-                        {editingProject && (
-                            <View>
-                                <Text style={styles.label}>Status</Text>
-                                <View style={styles.statusContainer}>
-                                    {[
-                                        { key: 'planning', label: 'Planejamento' },
-                                        { key: 'in_progress', label: 'Em Andamento' },
-                                        { key: 'completed', label: 'Concluído' },
-                                        { key: 'on_hold', label: 'Pausado' },
-                                    ].map(option => (
-                                        <TouchableOpacity
-                                            key={option.key}
-                                            style={[
-                                                styles.statusOption,
-                                                projectData.status === option.key && styles.statusOptionActive
-                                            ]}
-                                            onPress={() => setProjectData(p => ({ ...p, status: option.key as ProjectStatus }))}
-                                        >
-                                            <Text style={[
-                                                styles.statusOptionText,
-                                                projectData.status === option.key && styles.statusOptionTextActive
-                                            ]}>
-                                                {option.label}
-                                            </Text>
-                                        </TouchableOpacity>
+                <View style={styles.card}>
+                    {/* PASSO 1: INFORMAÇÕES BÁSICAS */}
+                    {step === 1 && (
+                        <View>
+                            <Text style={styles.sectionTitle}>Resumo do projeto</Text>
+                            
+                            <View style={styles.inputWrapper}>
+                                <Text style={styles.inputLabel}>Nome do projeto *</Text>
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="briefcase-outline" size={20} color={COLORS.gray[400]} style={styles.inputIcon} />
+                                    <TextInput 
+                                        style={styles.input} 
+                                        placeholder="Ex: App ProjectFy"
+                                        placeholderTextColor={COLORS.gray[300]}
+                                        value={projectData.name} 
+                                        onChangeText={text => setProjectData(p => ({ ...p, name: text }))} 
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.inputWrapper}>
+                                <Text style={styles.inputLabel}>Empresa / Cliente</Text>
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="business-outline" size={20} color={COLORS.gray[400]} style={styles.inputIcon} />
+                                    <TextInput 
+                                        style={styles.input} 
+                                        placeholder="Nome da empresa"
+                                        placeholderTextColor={COLORS.gray[300]}
+                                        value={projectData.company} 
+                                        onChangeText={text => setProjectData(p => ({ ...p, company: text }))} 
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.inputWrapper}>
+                                <Text style={styles.inputLabel}>Descrição *</Text>
+                                <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                                    <Ionicons name="reader-outline" size={20} color={COLORS.gray[400]} style={[styles.inputIcon, { marginTop: 12 }]} />
+                                    <TextInput 
+                                        style={[styles.input, styles.textArea]} 
+                                        placeholder="Descreva os objetivos do projeto..."
+                                        placeholderTextColor={COLORS.gray[300]}
+                                        multiline 
+                                        value={projectData.description} 
+                                        onChangeText={text => setProjectData(p => ({ ...p, description: text }))} 
+                                    />
+                                </View>
+                            </View>
+                            
+                            {editingProject && (
+                                <View style={styles.inputWrapper}>
+                                    <Text style={styles.inputLabel}>Status Atual</Text>
+                                    <View style={styles.statusGrid}>
+                                        {[
+                                            { key: 'planning', label: 'Planejamento', icon: 'map-outline' },
+                                            { key: 'in_progress', label: 'Em Andamento', icon: 'play-outline' },
+                                            { key: 'completed', label: 'Concluído', icon: 'checkmark-circle-outline' },
+                                            { key: 'on_hold', label: 'Pausado', icon: 'pause-outline' },
+                                        ].map(option => (
+                                            <TouchableOpacity
+                                                key={option.key}
+                                                style={[
+                                                    styles.statusPill,
+                                                    projectData.status === option.key && styles.statusPillActive
+                                                ]}
+                                                onPress={() => setProjectData(p => ({ ...p, status: option.key as ProjectStatus }))}
+                                            >
+                                                <Ionicons 
+                                                    name={option.icon as any} 
+                                                    size={16} 
+                                                    color={projectData.status === option.key ? COLORS.white : COLORS.gray[500]} 
+                                                />
+                                                <Text style={[
+                                                    styles.statusPillText,
+                                                    projectData.status === option.key && styles.statusPillTextActive
+                                                ]}>
+                                                    {option.label}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+                    )}
+
+                    {/* PASSO 2: DETALHES DO PROJETO */}
+                    {step === 2 && (
+                        <View>
+                            <Text style={styles.sectionTitle}>Prazos e prioridade</Text>
+                            
+                            <View style={styles.inputWrapper}>
+                                <Text style={styles.inputLabel}>Estimativa de horas</Text>
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="time-outline" size={20} color={COLORS.gray[400]} style={styles.inputIcon} />
+                                    <TextInput 
+                                        style={styles.input} 
+                                        placeholder="0"
+                                        keyboardType="numeric" 
+                                        value={projectData.estimatedHours} 
+                                        onChangeText={text => setProjectData(p => ({ ...p, estimatedHours: text }))} 
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.row}>
+                                <View style={[styles.inputWrapper, { flex: 1, marginRight: 8 }]}>
+                                    <Text style={styles.inputLabel}>Data Início *</Text>
+                                    <View style={styles.inputContainer}>
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="DD/MM/AAAA"
+                                            placeholderTextColor={COLORS.gray[300]}
+                                            keyboardType="numeric"
+                                            maxLength={10}
+                                            value={projectData.startDate} 
+                                            onChangeText={text => setProjectData(p => ({ ...p, startDate: applyDateMask(text) }))} 
+                                        />
+                                    </View>
+                                </View>
+                                <View style={[styles.inputWrapper, { flex: 1, marginLeft: 8 }]}>
+                                    <Text style={styles.inputLabel}>Prazo Final *</Text>
+                                    <View style={styles.inputContainer}>
+                                        <TextInput 
+                                            style={styles.input} 
+                                            placeholder="DD/MM/AAAA"
+                                            placeholderTextColor={COLORS.gray[300]}
+                                            keyboardType="numeric"
+                                            maxLength={10}
+                                            value={projectData.deadline} 
+                                            onChangeText={text => setProjectData(p => ({ ...p, deadline: applyDateMask(text) }))} 
+                                        />
+                                    </View>
+                                </View>
+                            </View>
+                            
+                            <Text style={[styles.inputLabel, { marginTop: 16 }]}>Prioridade do Projeto *</Text>
+                            <View style={styles.priorityGrid}>
+                                {[
+                                    { key: 'low', label: 'Baixa', color: COLORS.success, icon: 'arrow-down-circle' },
+                                    { key: 'medium', label: 'Média', color: COLORS.warning, icon: 'remove-circle' },
+                                    { key: 'high', label: 'Alta', color: COLORS.error, icon: 'arrow-up-circle' },
+                                ].map(option => (
+                                    <TouchableOpacity
+                                        key={option.key}
+                                        style={[
+                                            styles.priorityCard,
+                                            projectData.priority === option.key && {
+                                                borderColor: option.color,
+                                                backgroundColor: option.color + '10',
+                                            }
+                                        ]}
+                                        onPress={() => setProjectData(p => ({ ...p, priority: option.key as Priority }))}
+                                    >
+                                        <Ionicons 
+                                            name={option.icon as any} 
+                                            size={24} 
+                                            color={projectData.priority === option.key ? option.color : COLORS.gray[300]} 
+                                        />
+                                        <Text style={[
+                                            styles.priorityCardText,
+                                            projectData.priority === option.key && { color: option.color, fontWeight: '700' }
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* PASSO 3: EQUIPE */}
+                    {step === 3 && (
+                        <View>
+                            <Text style={styles.sectionTitle}>Membros da Equipe</Text>
+                            
+                            {projectData.team.length > 0 ? (
+                                <View style={styles.teamList}>
+                                    {projectData.team.map(member => (
+                                        <View key={member.id} style={styles.memberCard}>
+                                            <View style={styles.memberAvatar}>
+                                                <Text style={styles.avatarText}>{member.name.charAt(0).toUpperCase()}</Text>
+                                            </View>
+                                            <View style={styles.memberInfo}>
+                                                <Text style={styles.memberName}>{member.name}</Text>
+                                                <Text style={styles.memberRole}>{member.role}</Text>
+                                            </View>
+                                            <TouchableOpacity 
+                                                style={styles.removeMemberBtn}
+                                                onPress={() => handleRemoveMember(member.id)}
+                                            >
+                                                <Ionicons name="close-circle" size={22} color={COLORS.error} />
+                                            </TouchableOpacity>
+                                        </View>
                                     ))}
                                 </View>
-                            </View>
-                        )}
-                    </View>
-                )}
-
-                {/* PASSO 2: DETALHES DO PROJETO */}
-                {step === 2 && (
-                    <View>
-                        <Text style={styles.stepTitle}>Detalhes e Prazos</Text>
-                        <TextInput 
-                            style={styles.input} 
-                            placeholder="Horas Estimadas" 
-                            keyboardType="numeric" 
-                            value={projectData.estimatedHours} 
-                            onChangeText={text => setProjectData(p => ({ ...p, estimatedHours: text }))} 
-                        />
-                        <Text style={styles.label}>Data de Início (AAAA-MM-DD) *</Text>
-                        <TextInput 
-                            style={styles.input} 
-                            placeholder="Data de Início (AAAA-MM-DD) *" 
-                            value={projectData.startDate} 
-                            onChangeText={text => setProjectData(p => ({ ...p, startDate: text }))} 
-                        />
-                        <Text style={styles.label}>Prazo Final (AAAA-MM-DD) *</Text>
-                        <TextInput 
-                            style={styles.input} 
-                            placeholder="Prazo Final (AAAA-MM-DD) *" 
-                            value={projectData.deadline} 
-                            onChangeText={text => setProjectData(p => ({ ...p, deadline: text }))} 
-                        />
-                        
-                        <Text style={styles.label}>Prioridade *</Text>
-                        <View style={styles.priorityContainer}>
-                            {[
-                                { key: 'low', label: 'Baixa', color: COLORS.success },
-                                { key: 'medium', label: 'Média', color: COLORS.warning },
-                                { key: 'high', label: 'Alta', color: COLORS.error },
-                            ].map(option => (
-                                <TouchableOpacity
-                                    key={option.key}
-                                    style={[
-                                        styles.priorityOption,
-                                        projectData.priority === option.key && {
-                                            backgroundColor: option.color + '20',
-                                            borderColor: option.color,
-                                        }
-                                    ]}
-                                    onPress={() => setProjectData(p => ({ ...p, priority: option.key as Priority }))}
-                                >
-                                    <View style={[styles.priorityDot, { backgroundColor: option.color }]} />
-                                    <Text style={[styles.priorityText, projectData.priority === option.key && { color: option.color }]}>
-                                        {option.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-                )}
-
-                {/* PASSO 3: EQUIPE */}
-                {step === 3 && (
-                    <View>
-                        <Text style={styles.stepTitle}>Equipe Envolvida</Text>
-                        <Text style={styles.stepSubtitle}>Adicione os membros da equipe (opcional)</Text>
-                        
-                        {projectData.team.map(member => (
-                            <View key={member.id} style={styles.memberItem}>
-                                <View>
-                                    <Text style={styles.memberName}>{member.name}</Text>
-                                    <Text style={styles.memberRole}>{member.role}</Text>
+                            ) : (
+                                <View style={styles.emptyTeamCard}>
+                                    <Ionicons name="people-outline" size={40} color={COLORS.gray[200]} />
+                                    <Text style={styles.emptyTeamText}>Nenhum membro adicionado</Text>
                                 </View>
-                                <TouchableOpacity onPress={() => handleRemoveMember(member.id)}>
-                                    <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+                            )}
+
+                            <View style={styles.addMemberForm}>
+                                <Text style={styles.addSubTitle}>Adicionar Novo Membro</Text>
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="person-outline" size={20} color={COLORS.gray[400]} style={styles.inputIcon} />
+                                    <TextInput 
+                                        style={styles.input} 
+                                        placeholder="Nome" 
+                                        value={memberName} 
+                                        onChangeText={setMemberName} 
+                                    />
+                                </View>
+                                <View style={styles.inputContainer}>
+                                    <Ionicons name="ribbon-outline" size={20} color={COLORS.gray[400]} style={styles.inputIcon} />
+                                    <TextInput 
+                                        style={styles.input} 
+                                        placeholder="Função (ex: Designer)" 
+                                        value={memberRole} 
+                                        onChangeText={setMemberRole} 
+                                    />
+                                </View>
+                                <TouchableOpacity style={styles.addMemberButton} onPress={handleAddMember}>
+                                    <Ionicons name="add" size={20} color={COLORS.white} />
+                                    <Text style={styles.addMemberButtonText}>Adicionar</Text>
                                 </TouchableOpacity>
                             </View>
-                        ))}
-
-                        <View style={styles.addMemberContainer}>
-                            <TextInput 
-                                style={styles.input} 
-                                placeholder="Nome do Membro" 
-                                value={memberName} 
-                                onChangeText={setMemberName} 
-                            />
-                            <TextInput 
-                                style={styles.input} 
-                                placeholder="Função" 
-                                value={memberRole} 
-                                onChangeText={setMemberRole} 
-                            />
-                            <TouchableOpacity style={styles.addMemberButton} onPress={handleAddMember}>
-                                <Text style={styles.addMemberButtonText}>Adicionar Membro</Text>
-                            </TouchableOpacity>
                         </View>
-                    </View>
-                )}
-                
+                    )}
+                </View>
+
                 {/* NAVEGAÇÃO ENTRE PASSOS */}
                 <View style={styles.navigationContainer}>
-                    {step > 1 && (
+                    {step > 1 ? (
                         <TouchableOpacity 
                             style={[styles.navButton, styles.backButton]} 
                             onPress={() => setStep(s => s - 1)}
                         >
+                            <Ionicons name="arrow-back" size={20} color={COLORS.gray[600]} />
                             <Text style={styles.backButtonText}>Voltar</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity 
+                            style={[styles.navButton, styles.backButton]} 
+                            onPress={() => navigation.goBack()}
+                        >
+                            <Text style={styles.backButtonText}>Cancelar</Text>
                         </TouchableOpacity>
                     )}
                     
@@ -351,14 +511,16 @@ const CreateProjectScreen = () => {
                             style={[styles.navButton, styles.nextButton]} 
                             onPress={handleNextStep}
                         >
-                            <Text style={styles.nextButtonText}>Avançar</Text>
+                            <Text style={styles.nextButtonText}>Próximo</Text>
+                            <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
                         </TouchableOpacity>
                     ) : (
                         <TouchableOpacity 
                             style={[styles.navButton, styles.saveButton]} 
                             onPress={handleSaveProject}
                         >
-                            <Text style={styles.saveButtonText}>{editingProject ? 'Atualizar Projeto' : 'Salvar Projeto'}</Text>
+                            <Ionicons name="cloud-upload-outline" size={20} color={COLORS.white} />
+                            <Text style={styles.saveButtonText}>{editingProject ? 'Atualizar' : 'Finalizar'}</Text>
                         </TouchableOpacity>
                     )}
                 </View>
@@ -370,155 +532,288 @@ const CreateProjectScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: COLORS.gray[50],
     },
     scrollContainer: {
-        padding: 16,
+        padding: 20,
+        paddingBottom: 40,
+    },
+    header: {
+        marginBottom: 24,
     },
     mainTitle: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 8,
-        color: COLORS.gray[800],
+        color: COLORS.gray[900],
+        marginBottom: 4,
     },
     subtitle: {
         fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 24,
         color: COLORS.gray[500],
     },
-    stepTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 8,
-        color: COLORS.gray[700],
+    progressContainer: {
+        marginBottom: 32,
     },
-    stepSubtitle: {
-        fontSize: 14,
-        color: COLORS.gray[500],
-        marginBottom: 16,
-    },
-    input: {
-        backgroundColor: COLORS.white,
-        borderWidth: 1,
-        borderColor: COLORS.gray[200],
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 16,
-        fontSize: 16,
-        color: COLORS.gray[800],
-    },
-    textArea: {
-        height: 96,
-        textAlignVertical: 'top',
-    },
-    label: {
-        fontSize: 16,
-        color: COLORS.gray[700],
-        marginBottom: 8,
-        fontWeight: '500',
-    },
-    statusContainer: {
+    stepsRow: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
     },
-    statusOption: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+    stepCircle: {
+        width: 32,
+        height: 32,
         borderRadius: 16,
-        borderWidth: 1,
-        borderColor: COLORS.gray[200],
-        backgroundColor: COLORS.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
     },
-    statusOptionActive: {
+    stepCircleActive: {
         backgroundColor: COLORS.primary[500],
         borderColor: COLORS.primary[500],
     },
-    statusOptionText: {
-        fontSize: 14,
-        color: COLORS.gray[600],
+    stepCircleInactive: {
+        backgroundColor: COLORS.white,
+        borderColor: COLORS.gray[200],
     },
-    statusOptionTextActive: {
+    stepNumber: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    stepNumberActive: {
         color: COLORS.white,
+    },
+    stepNumberInactive: {
+        color: COLORS.gray[400],
+    },
+    stepLine: {
+        width: 40,
+        height: 2,
+        marginHorizontal: 4,
+    },
+    stepLineActive: {
+        backgroundColor: COLORS.primary[500],
+    },
+    stepLineInactive: {
+        backgroundColor: COLORS.gray[200],
+    },
+    stepsLabels: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 28,
+    },
+    stepLabel: {
+        fontSize: 12,
+        color: COLORS.gray[400],
         fontWeight: '500',
     },
-    priorityContainer: {
-        marginBottom: 16,
+    stepLabelActive: {
+        color: COLORS.primary[500],
     },
-    priorityOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        borderWidth: 1,
-        borderColor: COLORS.gray[200],
-        borderRadius: 8,
-        marginBottom: 8,
+    card: {
         backgroundColor: COLORS.white,
+        borderRadius: 20,
+        padding: 24,
+        ...THEME.shadows.md,
     },
-    priorityDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        marginRight: 12,
-    },
-    priorityText: {
-        fontSize: 16,
-        color: COLORS.gray[700],
-    },
-    memberItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: COLORS.white,
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: COLORS.gray[200],
-    },
-    memberName: {
+    sectionTitle: {
+        fontSize: 18,
         fontWeight: 'bold',
+        color: COLORS.gray[800],
+        marginBottom: 20,
+    },
+    inputWrapper: {
+        marginBottom: 20,
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.gray[700],
+        marginBottom: 8,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.gray[50],
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: COLORS.gray[100],
+        paddingHorizontal: 12,
+        height: 52,
+    },
+    inputIcon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
         fontSize: 16,
         color: COLORS.gray[800],
     },
-    memberRole: {
-        color: COLORS.gray[500],
-        fontSize: 14,
+    textAreaContainer: {
+        height: 120,
+        alignItems: 'flex-start',
     },
-    addMemberContainer: {
-        backgroundColor: COLORS.gray[100],
+    textArea: {
+        height: '100%',
+        paddingTop: 12,
+        textAlignVertical: 'top',
+    },
+    statusGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 4,
+    },
+    statusPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: COLORS.gray[200],
+        backgroundColor: COLORS.white,
+        gap: 6,
+    },
+    statusPillActive: {
+        backgroundColor: COLORS.primary[500],
+        borderColor: COLORS.primary[500],
+    },
+    statusPillText: {
+        fontSize: 13,
+        color: COLORS.gray[600],
+        fontWeight: '500',
+    },
+    statusPillTextActive: {
+        color: COLORS.white,
+    },
+    row: {
+        flexDirection: 'row',
+    },
+    priorityGrid: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 8,
+    },
+    priorityCard: {
+        flex: 1,
+        height: 80,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: COLORS.gray[100],
+        backgroundColor: COLORS.gray[50],
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8,
+    },
+    priorityCardText: {
+        fontSize: 13,
+        color: COLORS.gray[400],
+        fontWeight: '600',
+    },
+    teamList: {
+        marginBottom: 24,
+    },
+    memberCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.white,
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: COLORS.gray[100],
+    },
+    memberAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.primary[100],
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    avatarText: {
+        color: COLORS.primary[700],
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    memberInfo: {
+        flex: 1,
+    },
+    memberName: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: COLORS.gray[800],
+    },
+    memberRole: {
+        fontSize: 13,
+        color: COLORS.gray[500],
+    },
+    removeMemberBtn: {
+        padding: 4,
+    },
+    emptyTeamCard: {
+        height: 100,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: COLORS.gray[50],
+        borderRadius: 12,
+        borderStyle: 'dashed',
+        borderWidth: 2,
+        borderColor: COLORS.gray[100],
+        marginBottom: 24,
+    },
+    emptyTeamText: {
+        fontSize: 14,
+        color: COLORS.gray[400],
+        marginTop: 8,
+    },
+    addMemberForm: {
+        backgroundColor: COLORS.gray[50],
+        borderRadius: 16,
         padding: 16,
-        borderRadius: 8,
-        marginTop: 16,
+        gap: 12,
+    },
+    addSubTitle: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: COLORS.gray[700],
+        marginBottom: 4,
     },
     addMemberButton: {
         backgroundColor: COLORS.primary[500],
-        padding: 12,
-        borderRadius: 8,
+        flexDirection: 'row',
+        height: 48,
+        borderRadius: 12,
+        justifyContent: 'center',
         alignItems: 'center',
+        gap: 8,
+        marginTop: 4,
     },
     addMemberButtonText: {
         color: COLORS.white,
+        fontWeight: 'bold',
         fontSize: 16,
-        fontWeight: '500',
     },
     navigationContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 32,
-        gap: 12,
+        gap: 16,
     },
     navButton: {
         flex: 1,
-        padding: 14,
-        borderRadius: 8,
+        flexDirection: 'row',
+        height: 56,
+        borderRadius: 16,
+        justifyContent: 'center',
         alignItems: 'center',
+        gap: 8,
+        ...THEME.shadows.sm,
     },
     backButton: {
-        backgroundColor: COLORS.gray[100],
+        backgroundColor: COLORS.white,
         borderWidth: 1,
         borderColor: COLORS.gray[200],
     },
@@ -529,19 +824,19 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.success,
     },
     backButtonText: {
-        color: COLORS.gray[500],
+        color: COLORS.gray[600],
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: 'bold',
     },
     nextButtonText: {
         color: COLORS.white,
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: 'bold',
     },
     saveButtonText: {
         color: COLORS.white,
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: 'bold',
     },
 });
 

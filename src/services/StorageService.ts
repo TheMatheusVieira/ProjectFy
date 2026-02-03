@@ -313,7 +313,7 @@ class StorageService {
       const notes = await AsyncStorage.getItem(this.KEYS.NOTES);
       return notes ? JSON.parse(notes) : [];
     } catch (error) {
-      console.error('Erro ao buscar anotações:', error);
+      console.error('Erro ao buscar todas as anotações:', error);
       return [];
     }
   }

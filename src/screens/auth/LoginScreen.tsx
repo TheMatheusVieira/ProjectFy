@@ -13,23 +13,22 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, THEME } from '../../constants/colors';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/index';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 
 type LoginScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
+  navigation: StackNavigationProp<RootStackParamList, 'Login'>;
 };
 
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const { login } = useAuth();
+  const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleLogin = async (): Promise<void> => {
-    if (!email || !password) {
+    if (!name.trim() || !email.trim()) {
       Alert.alert('Erro', 'Por favor, preencha todos os campos');
       return;
     }
@@ -42,12 +41,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
+      const success = await login(name, email);
 
       if (!success) {
-        Alert.alert('Erro', 'E-mail ou senha incorretos');
+        Alert.alert('Erro', 'Erro ao fazer login. Tente novamente.');
       }
-      // Navegação é automática via AppNavigator reagindo ao estado do context
     } catch (error) {
       console.error('Erro no login:', error);
       Alert.alert('Erro', 'Erro ao fazer login. Tente novamente.');
@@ -69,10 +67,28 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>ProjectFy</Text>
-          <Text style={styles.subtitle}>Entre na sua conta</Text>
+          <Text style={styles.subtitle}>Identifique-se para entrar</Text>
         </View>
 
         <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="person-outline"
+              size={20}
+              color={COLORS.gray[400]}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Nome"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              autoCorrect={false}
+              placeholderTextColor={COLORS.gray[400]}
+            />
+          </View>
+
           <View style={styles.inputContainer}>
             <Ionicons
               name="mail-outline"
@@ -88,34 +104,8 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              placeholderTextColor={COLORS.gray[400]}
             />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={20}
-              color={COLORS.gray[400]}
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Senha"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                size={20}
-                color={COLORS.gray[400]}
-              />
-            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -132,10 +122,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Não tem uma conta?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.registerLink}>Cadastre-se</Text>
-          </TouchableOpacity>
+          <Text style={styles.footerText}>Todos os dados são salvos localmente</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -187,9 +174,6 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.md,
     color: COLORS.gray[800],
   },
-  eyeIcon: {
-    padding: THEME.spacing.sm,
-  },
   loginButton: {
     backgroundColor: COLORS.primary[500],
     borderRadius: THEME.borderRadius.md,
@@ -215,11 +199,5 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: THEME.fontSize.md,
     color: COLORS.gray[600],
-    marginRight: THEME.spacing.xs,
-  },
-  registerLink: {
-    fontSize: THEME.fontSize.md,
-    color: COLORS.primary[500],
-    fontWeight: 'semibold',
   },
 });

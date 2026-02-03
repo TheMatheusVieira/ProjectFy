@@ -8,7 +8,9 @@ import {
   Alert,
   TextInput,
   Modal,
+  Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
@@ -110,6 +112,42 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
     }
   };
 
+  const handlePickImage = async (): Promise<void> => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permissão Necessária', 'Precisamos de permissão para acessar sua galeria.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const selectedImage = result.assets[0].uri;
+      
+      try {
+        if (user) {
+          const updatedUser: User = {
+            ...user,
+            avatar: selectedImage,
+          };
+          
+          await StorageService.saveUser(updatedUser);
+          await StorageService.setCurrentUser(updatedUser);
+          setUser(updatedUser);
+        }
+      } catch (error) {
+        console.error('Erro ao salvar imagem:', error);
+        Alert.alert('Erro', 'Não foi possível salvar a imagem.');
+      }
+    }
+  };
+
   const clearAllData = (): void => {
     Alert.alert(
       'Limpar Dados',
@@ -169,11 +207,20 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Header do Perfil */}
       <View style={styles.profileHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user.name.charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        <TouchableOpacity style={styles.avatarContainer} onPress={handlePickImage}>
+          {user.avatar ? (
+            <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>
+                {user.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <View style={styles.editBadge}>
+            <Ionicons name="camera" size={16} color={COLORS.white} />
+          </View>
+        </TouchableOpacity>
         <Text style={styles.userName}>{user.name}</Text>
         <Text style={styles.userEmail}>{user.email}</Text>
         <Text style={styles.memberSince}>Membro desde {memberSince}</Text>
@@ -205,7 +252,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
         >
           <View style={styles.menuItemLeft}>
             <Ionicons name="person-outline" size={24} color={COLORS.primary[500]} />
-            <Text style={styles.menuItemText}>Editar Perfil</Text>
+            <Text style={styles.menuItemText}>Editar perfil</Text>
           </View>
           <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
         </TouchableOpacity>
@@ -256,7 +303,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
         >
           <View style={styles.menuItemLeft}>
             <Ionicons name="cloud-upload-outline" size={24} color={COLORS.primary[500]} />
-            <Text style={styles.menuItemText}>Backup dos Dados</Text>
+            <Text style={styles.menuItemText}>Backup dos dados</Text>
           </View>
           <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
         </TouchableOpacity>
@@ -267,7 +314,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
         >
           <View style={styles.menuItemLeft}>
             <Ionicons name="download-outline" size={24} color={COLORS.secondary[500]} />
-            <Text style={styles.menuItemText}>Exportar Relatórios</Text>
+            <Text style={styles.menuItemText}>Exportar relatórios</Text>
           </View>
           <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
         </TouchableOpacity>
@@ -278,7 +325,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
         >
           <View style={styles.menuItemLeft}>
             <Ionicons name="trash-outline" size={24} color={COLORS.error} />
-            <Text style={[styles.menuItemText, { color: COLORS.error }]}>Limpar Todos os Dados</Text>
+            <Text style={[styles.menuItemText, { color: COLORS.error }]}>Limpar todos os dados</Text>
           </View>
           <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
         </TouchableOpacity>
@@ -299,7 +346,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
         <TouchableOpacity style={styles.menuItem}>
           <View style={styles.menuItemLeft}>
             <Ionicons name="information-circle-outline" size={24} color={COLORS.secondary[500]} />
-            <Text style={styles.menuItemText}>Sobre o App</Text>
+            <Text style={styles.menuItemText}>Sobre o app</Text>
           </View>
           <Ionicons name="chevron-forward-outline" size={20} color={COLORS.gray[400]} />
         </TouchableOpacity>
@@ -321,7 +368,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Editar Perfil</Text>
+              <Text style={styles.modalTitle}>Editar perfil</Text>
               <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                 <Ionicons name="close" size={24} color={COLORS.gray[600]} />
               </TouchableOpacity>
@@ -339,7 +386,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Horas por Semana</Text>
+                <Text style={styles.inputLabel}>Horas por semana</Text>
                 <TextInput
                   style={styles.input}
                   value={editData.weeklyHours}
@@ -350,7 +397,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps): JSX.E
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Horas por Dia</Text>
+                <Text style={styles.inputLabel}>Horas por dia</Text>
                 <TextInput
                   style={styles.input}
                   value={editData.dailyHours}
@@ -402,18 +449,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.md,
     ...THEME.shadows.sm,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  avatarContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: THEME.spacing.md,
+    position: 'relative',
+    ...THEME.shadows.md,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: COLORS.primary[500],
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: THEME.spacing.md,
   },
   avatarText: {
     color: COLORS.white,
-    fontSize: THEME.fontSize.xxxl,
+    fontSize: 40,
+    fontWeight: 'bold',
+  },
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: COLORS.primary[600],
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.white,
   },
   userName: {
     fontSize: THEME.fontSize.xl,

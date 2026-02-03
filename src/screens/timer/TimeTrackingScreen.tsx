@@ -226,7 +226,7 @@ export default function TimeTrackingScreen() {
 
       {/* History Section */}
       <View style={styles.historySection}>
-        <Text style={styles.sectionTitle}>Histórico de Registros</Text>
+        <Text style={styles.sectionTitle}>Histórico de registros</Text>
         <FlatList
           data={logs}
           keyExtractor={(item) => item.id}
@@ -254,7 +254,7 @@ export default function TimeTrackingScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Novo Registro de Tempo</Text>
+              <Text style={styles.modalTitle}>Novo registro de tempo</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Ionicons name="close" size={24} color={COLORS.gray[600]} />
               </TouchableOpacity>
@@ -298,7 +298,7 @@ export default function TimeTrackingScreen() {
 
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.saveButton} onPress={handleSaveLog}>
-                <Text style={styles.saveButtonText}>Salvar Registro</Text>
+                <Text style={styles.saveButtonText}>Salvar registro</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -7,8 +7,7 @@ interface AuthContextData {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: RegisterFormData) => Promise<boolean>;
+  login: (name: string, email: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
 }
@@ -42,63 +41,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  async function login(email: string, password: string): Promise<boolean> {
+  async function login(name: string, email: string): Promise<boolean> {
     try {
+      if (!name.trim() || !email.trim()) return false;
+      
       const usersList = await StorageService.getUsers();
-
-      const foundUser = usersList.find(
-        (u) => u.email === email && u.password === password
+      const lowerEmail = email.trim().toLowerCase();
+      
+      let foundUser = usersList.find(
+        (u) => u.email?.toLowerCase() === lowerEmail
       );
-
-      if (foundUser) {
-        await StorageService.setUserToken('logged_in');
-        await StorageService.setCurrentUser(foundUser);
-        setUser(foundUser);
-        return true;
+      
+      if (!foundUser) {
+        // Se não encontrar, cria um novo usuário
+        foundUser = {
+          id: uuid.v4() as string,
+          name: name.trim(),
+          email: email.trim(),
+          role: 'admin',
+          weeklyHours: 40,
+          dailyHours: 8,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          projects: [],
+          tasks: [],
+          settings: StorageService.getDefaultSettings(),
+        };
+        await StorageService.saveUser(foundUser);
+      } else if (foundUser.name !== name.trim()) {
+        // Se encontrar mas o nome for diferente, atualiza o nome
+        foundUser.name = name.trim();
+        foundUser.updatedAt = new Date().toISOString();
+        await StorageService.saveUser(foundUser);
       }
-      return false;
+
+      await StorageService.setUserToken('logged_in');
+      await StorageService.setCurrentUser(foundUser);
+      setUser(foundUser);
+      return true;
     } catch (error) {
       console.error('Erro no login:', error);
       return false;
     }
   }
 
-  async function register(userData: RegisterFormData): Promise<boolean> {
-    try {
-      const usersList = await StorageService.getUsers();
-
-      if (usersList.some(u => u.email === userData.email)) {
-        return false;
-      }
-
-      const newUser: User = {
-        id: uuid.v4() as string,
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        role: userData.role,
-        weeklyHours: parseInt(userData.weeklyHours) || 40,
-        dailyHours: parseInt(userData.dailyHours) || 8,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        projects: [],
-        tasks: [],
-        settings: StorageService.getDefaultSettings(),
-      };
-
-      await StorageService.saveUser(newUser);
-      
-      // Auto login após registro
-      await StorageService.setUserToken('logged_in');
-      await StorageService.setCurrentUser(newUser);
-      setUser(newUser);
-      
-      return true;
-    } catch (error) {
-      console.error('Erro no registro:', error);
-      return false;
-    }
-  }
+// register function was removed in favor of automatic account creation during login
 
   async function logout() {
     try {
@@ -125,7 +112,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user, 
         isLoading, 
         login, 
-        register, 
         logout,
         updateUser
       }}

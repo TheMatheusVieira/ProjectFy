@@ -9,7 +9,6 @@ import { useAuth } from "../context/AuthContext";
 
 // Screens
 import LoginScreen from "../screens/auth/LoginScreen";
-import RegisterScreen from "../screens/auth/RegisterScreen";
 import DashboardScreen from "../screens/dashboard/DashboardScreen";
 import ProjectsScreen from "../screens/projects/ProjectsScreen";
 import ProfileScreen from "../screens/profile/ProfileScreen";
@@ -18,6 +17,7 @@ import AppointmentsScreen from "../screens/calendar/AppointmentsScreen";
 import CreateProjectScreen from "../screens/projects/CreateProjectScreen";
 import UserManagementScreen from "../screens/profile/UserManagementScreen";
 import ProjectNotesScreen from "../screens/projects/ProjectNotesScreen";
+import AllNotesScreen from "../screens/notes/AllNotesScreen";
 import AlertsScreen from "../screens/dashboard/AlertsScreen";
 import ProjectTasksScreen from "../screens/projects/ProjectTasksScreen";
 import ProjectAttachmentsScreen from "../screens/projects/ProjectAttachmentsScreen";
@@ -141,17 +141,22 @@ export default function AppNavigator() {
           <Stack.Screen
             name="CreateProject"
             component={CreateProjectScreen}
-            options={{ title: "Novo Projeto" }}
+            options={{ title: "Novo projeto" }}
           />
           <Stack.Screen
             name="UserManagement"
             component={UserManagementScreen}
-            options={{ title: "Gerenciar Usuários" }}
+            options={{ title: "Gerenciar usuários" }}
           />
           <Stack.Screen
             name="ProjectNotes"
             component={ProjectNotesScreen}
             options={({ route }) => ({ title: `Notas: ${route.params.projectName}` })}
+          />
+          <Stack.Screen
+            name="AllNotes"
+            component={AllNotesScreen}
+            options={{ title: "Central de notas" }}
           />
           <Stack.Screen
             name="Alerts"
@@ -195,11 +200,6 @@ export default function AppNavigator() {
             name="Login"
             component={LoginScreen}
             options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Register"
-            component={RegisterScreen}
-            options={{ title: "Cadastro" }}
           />
         </>
       )}

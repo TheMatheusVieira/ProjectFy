@@ -318,52 +318,69 @@ export default function ProjectTasksScreen() {
             </View>
 
             <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Título *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ex: Desenvolver tela de login"
-                value={taskTitle}
-                onChangeText={setTaskTitle}
-              />
+              <Text style={styles.label}>Título da Tarefa *</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="list-outline" size={20} color={COLORS.gray[400]} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex: Desenvolver tela de login"
+                  placeholderTextColor={COLORS.gray[300]}
+                  value={taskTitle}
+                  onChangeText={setTaskTitle}
+                />
+              </View>
 
               <Text style={styles.label}>Descrição</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Detalhes da tarefa..."
-                value={taskDescription}
-                onChangeText={setTaskDescription}
-                multiline
-              />
+              <View style={[styles.inputContainer, styles.textAreaContainer]}>
+                <Ionicons name="reader-outline" size={20} color={COLORS.gray[400]} style={[styles.inputIcon, { marginTop: 12 }]} />
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Detalhes da tarefa..."
+                  placeholderTextColor={COLORS.gray[300]}
+                  value={taskDescription}
+                  onChangeText={setTaskDescription}
+                  multiline
+                />
+              </View>
 
-              <Text style={styles.label}>Prioridade</Text>
-              <View style={styles.prioritySelector}>
+              <Text style={styles.label}>Prioridade *</Text>
+              <View style={styles.priorityGrid}>
                 {[
-                  { key: 'low', label: 'Baixa', color: COLORS.success },
-                  { key: 'medium', label: 'Média', color: COLORS.warning },
-                  { key: 'high', label: 'Alta', color: COLORS.error },
+                  { key: 'low', label: 'Baixa', color: COLORS.success, icon: 'arrow-down-circle' },
+                  { key: 'medium', label: 'Média', color: COLORS.warning, icon: 'remove-circle' },
+                  { key: 'high', label: 'Alta', color: COLORS.error, icon: 'arrow-up-circle' },
                 ].map(opt => (
                   <TouchableOpacity
                     key={opt.key}
                     style={[
-                      styles.priorityOption,
-                      taskPriority === opt.key && { backgroundColor: opt.color + '20', borderColor: opt.color }
+                      styles.priorityCard,
+                      taskPriority === opt.key && { borderColor: opt.color, backgroundColor: opt.color + '10' }
                     ]}
                     onPress={() => setTaskPriority(opt.key as any)}
                   >
-                    <Text style={[styles.priorityOptionText, taskPriority === opt.key && { color: opt.color }]}>
+                    <Ionicons 
+                      name={opt.icon as any} 
+                      size={20} 
+                      color={taskPriority === opt.key ? opt.color : COLORS.gray[300]} 
+                    />
+                    <Text style={[styles.priorityCardText, taskPriority === opt.key && { color: opt.color, fontWeight: '700' }]}>
                       {opt.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              <Text style={styles.label}>Prazo (AAAA-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="2024-12-31"
-                value={taskDueDate}
-                onChangeText={setTaskDueDate}
-              />
+              <Text style={[styles.label, { marginTop: 20 }]}>Prazo (AAAA-MM-DD)</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="calendar-outline" size={20} color={COLORS.gray[400]} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="2024-12-31"
+                  placeholderTextColor={COLORS.gray[300]}
+                  value={taskDueDate}
+                  onChangeText={setTaskDueDate}
+                />
+              </View>
 
               {project?.team && project.team.length > 0 && (
                 <>
@@ -554,6 +571,9 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray[100],
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: THEME.borderRadius.xl,
+    borderTopRightRadius: THEME.borderRadius.xl,
   },
   modalTitle: {
     fontSize: THEME.fontSize.lg,
@@ -562,50 +582,69 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     padding: THEME.spacing.lg,
+    backgroundColor: COLORS.white,
   },
   label: {
-    fontSize: THEME.fontSize.sm,
+    fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.gray[700],
     marginBottom: 8,
+    marginTop: 16,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.gray[50],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.gray[100],
+    paddingHorizontal: 12,
+    height: 52,
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    backgroundColor: COLORS.gray[50],
-    borderWidth: 1,
-    borderColor: COLORS.gray[200],
-    borderRadius: THEME.borderRadius.md,
-    padding: THEME.spacing.md,
-    marginBottom: THEME.spacing.md,
-    fontSize: THEME.fontSize.md,
+    flex: 1,
+    fontSize: 16,
     color: COLORS.gray[800],
   },
+  textAreaContainer: {
+    height: 100,
+    alignItems: 'flex-start',
+  },
   textArea: {
-    height: 80,
+    height: '100%',
+    paddingTop: 12,
     textAlignVertical: 'top',
   },
-  prioritySelector: {
+  priorityGrid: {
     flexDirection: 'row',
-    gap: THEME.spacing.sm,
-    marginBottom: THEME.spacing.md,
+    gap: 12,
+    marginTop: 4,
   },
-  priorityOption: {
+  priorityCard: {
     flex: 1,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.borderRadius.md,
-    borderWidth: 1,
-    borderColor: COLORS.gray[200],
+    height: 60,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.gray[100],
+    backgroundColor: COLORS.gray[50],
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
+    gap: 4,
   },
-  priorityOptionText: {
-    fontSize: THEME.fontSize.sm,
-    color: COLORS.gray[600],
+  priorityCardText: {
+    fontSize: 12,
+    color: COLORS.gray[400],
+    fontWeight: '600',
   },
   teamSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: THEME.spacing.sm,
     marginBottom: THEME.spacing.xl,
+    marginTop: 8,
   },
   teamOption: {
     paddingHorizontal: 12,
@@ -631,6 +670,7 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: COLORS.gray[100],
+    backgroundColor: COLORS.white,
   },
   saveButton: {
     backgroundColor: COLORS.primary[500],

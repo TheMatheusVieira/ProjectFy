@@ -21,6 +21,7 @@ type ProjectsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Mai
 export default function ProjectsScreen(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectHours, setProjectHours] = useState<Record<string, number>>({});
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [filter, setFilter] = useState<'all' | 'in_progress' | 'completed' | 'planning'>('all');
 
@@ -47,6 +48,14 @@ export default function ProjectsScreen(): JSX.Element {
         // Carregar projetos do usuário
         const userProjects = await StorageService.getUserProjects(currentUser.id);
         setProjects(userProjects);
+
+        // Carregar logs de tempo e calcular totais por projeto
+        const allLogs = await StorageService.getTimeLogs();
+        const hoursMap: Record<string, number> = {};
+        allLogs.forEach(log => {
+          hoursMap[log.projectId] = (hoursMap[log.projectId] || 0) + log.duration;
+        });
+        setProjectHours(hoursMap);
         
         console.log(`Carregados ${userProjects.length} projetos para o usuário ${currentUser.name}`);
       } else {
@@ -116,6 +125,15 @@ export default function ProjectsScreen(): JSX.Element {
       case 'on_hold': return 'Pausado';
       default: return 'Desconhecido';
     }
+  };
+
+  const calculateProjectProgress = (project: Project): number => {
+    if (!project.estimatedHours || project.estimatedHours === 0) {
+      return project.progress || 0;
+    }
+    const workedHours = (projectHours[project.id] || 0) / 3600;
+    const progress = (workedHours / project.estimatedHours) * 100;
+    return Math.min(Math.round(progress), 100);
   };
 
   const filteredProjects = getFilteredProjects();
@@ -270,7 +288,7 @@ export default function ProjectsScreen(): JSX.Element {
                   />
                   <Text style={styles.statusText}>{getStatusLabel(project.status)}</Text>
                 </View>
-                <Text style={styles.progressText}>{project.progress}%</Text>
+                <Text style={styles.progressText}>{calculateProjectProgress(project)}%</Text>
               </View>
 
               {/* Barra de Progresso */}
@@ -279,7 +297,7 @@ export default function ProjectsScreen(): JSX.Element {
                   style={[
                     styles.progressFill,
                     { 
-                      width: `${project.progress}%`,
+                      width: `${calculateProjectProgress(project)}%`,
                       backgroundColor: getStatusColor(project.status)
                     }
                   ]}
@@ -288,12 +306,12 @@ export default function ProjectsScreen(): JSX.Element {
 
               {/* Informações adicionais */}
               <View style={styles.projectInfo}>
-                {project.estimatedHours && project.estimatedHours > 0 && (
-                  <View style={styles.infoItem}>
-                    <Ionicons name="time-outline" size={16} color={COLORS.gray[500]} />
-                    <Text style={styles.infoText}>{project.estimatedHours}h estimadas</Text>
-                  </View>
-                )}
+                <View style={styles.infoItem}>
+                  <Ionicons name="time-outline" size={16} color={COLORS.gray[500]} />
+                  <Text style={styles.infoText}>
+                    {Math.floor((projectHours[project.id] || 0) / 3600)}h / {project.estimatedHours || 0}h
+                  </Text>
+                </View>
                 
                 {project.team && project.team.length > 0 && (
                   <View style={styles.infoItem}>
