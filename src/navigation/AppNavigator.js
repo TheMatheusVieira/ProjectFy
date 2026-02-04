@@ -1,5 +1,5 @@
 import React from "react";
-import { createStackNavigator } from "@react-navigation/stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { View, ActivityIndicator } from "react-native";
@@ -30,7 +30,7 @@ import SettingsScreen from "../screens/profile/SettingsScreen";
 // Constants
 import { COLORS } from "../constants/colors";
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Tab Navigator para usuários autenticados
@@ -141,57 +141,75 @@ export default function AppNavigator() {
           <Stack.Screen
             name="CreateProject"
             component={CreateProjectScreen}
-            options={{ title: "Novo projeto" }}
+            options={{ title: "Novo projeto", headerBackTitleVisible: false }}
           />
           <Stack.Screen
             name="UserManagement"
             component={UserManagementScreen}
-            options={{ title: "Gerenciar usuários" }}
+            options={{ title: "Gerenciar usuários", headerBackTitleVisible: false }}
           />
           <Stack.Screen
             name="ProjectNotes"
             component={ProjectNotesScreen}
-            options={({ route }) => ({ title: `Notas: ${route.params.projectName}` })}
+            options={({ route }) => ({
+              title: route.params?.projectName ? `Notas: ${route.params.projectName}` : "Notas de Projeto",
+              headerBackTitleVisible: false
+            })}
           />
           <Stack.Screen
             name="AllNotes"
             component={AllNotesScreen}
-            options={{ title: "Central de notas" }}
+            options={{
+              title: "Central de notas",
+              headerBackTitleVisible: false
+            }}
           />
           <Stack.Screen
             name="Alerts"
             component={AlertsScreen}
-            options={{ title: "Notificações" }}
+            options={{ title: "Notificações", headerBackTitleVisible: false }}
           />
           <Stack.Screen
             name="ProjectTasks"
             component={ProjectTasksScreen}
-            options={({ route }) => ({ title: `Tarefas: ${route.params.projectName}` })}
+            options={({ route }) => ({
+              title: route.params?.projectName ? `Tarefas: ${route.params.projectName}` : "Tarefas",
+              headerBackTitleVisible: false
+            })}
           />
           <Stack.Screen
             name="ProjectAttachments"
             component={ProjectAttachmentsScreen}
-            options={({ route }) => ({ title: `Anexos: ${route.params.projectName}` })}
+            options={({ route }) => ({
+              title: route.params?.projectName ? `Anexos: ${route.params.projectName}` : "Anexos",
+              headerBackTitleVisible: false
+            })}
           />
           <Stack.Screen
             name="ProjectPurchases"
             component={ProjectPurchasesScreen}
-            options={({ route }) => ({ title: `Compras: ${route.params.projectName}` })}
+            options={({ route }) => ({
+              title: route.params?.projectName ? `Compras: ${route.params.projectName}` : "Compras",
+              headerBackTitleVisible: false
+            })}
           />
           <Stack.Screen
             name="CreateAppointment"
             component={CreateAppointmentScreen}
-            options={{ title: "Agendamento" }}
+            options={{ title: "Agendamento", headerBackTitleVisible: false }}
           />
           <Stack.Screen
             name="TimeTracking"
             component={TimeTrackingScreen}
-            options={({ route }) => ({ title: `Cronômetro: ${route.params.projectName}` })}
+            options={({ route }) => ({
+              title: route.params?.projectName ? `Cronômetro: ${route.params.projectName}` : "Cronômetro",
+              headerBackTitleVisible: false
+            })}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
-            options={{ title: "Configurações" }}
+            options={{ title: "Configurações", headerBackTitleVisible: false }}
           />
         </>
       ) : (
