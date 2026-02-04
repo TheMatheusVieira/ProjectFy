@@ -11,6 +11,7 @@ export default function App() {
   useEffect(() => {
     const init = async () => {
       try {
+        await NotificationService.init();
         await NotificationService.requestPermissions();
       } catch (error) {
         console.warn('App: Error during notification service initialization', error);

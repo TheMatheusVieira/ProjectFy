@@ -6,24 +6,30 @@ import { Platform } from 'react-native';
 const isExpoGo = Constants.appOwnership === 'expo';
 const isAndroid = Platform.OS === 'android';
 
-// Configuração de como as notificações aparecem quando o app está aberto
-if (!isExpoGo || !isAndroid) {
-    try {
-        Notifications.setNotificationHandler({
-            handleNotification: async () => ({
-                shouldShowAlert: true,
-                shouldPlaySound: true,
-                shouldSetBadge: false,
-                shouldShowBanner: true,
-                shouldShowList: true,
-            }),
-        });
-    } catch (e) {
-        console.warn('NotificationService: Failed to set handler', e);
-    }
-}
+// Configuração básica removida do nível superior para evitar crash na inicialização
 
 class NotificationService {
+    /**
+     * Inicializa as configurações de notificação
+     */
+    static async init() {
+        if (!isExpoGo || !isAndroid) {
+            try {
+                Notifications.setNotificationHandler({
+                    handleNotification: async () => ({
+                        shouldShowAlert: true,
+                        shouldPlaySound: true,
+                        shouldSetBadge: false,
+                        shouldShowBanner: true,
+                        shouldShowList: true,
+                    }),
+                });
+            } catch (e) {
+                console.warn('NotificationService: Failed to set handler', e);
+            }
+        }
+    }
+
     /**
      * Solicita permissão para enviar notificações
      */
