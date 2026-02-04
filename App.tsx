@@ -9,7 +9,14 @@ import NotificationService from './src/services/NotificationService';
 
 export default function App() {
   useEffect(() => {
-    NotificationService.requestPermissions();
+    const init = async () => {
+      try {
+        await NotificationService.requestPermissions();
+      } catch (error) {
+        console.warn('App: Error during notification service initialization', error);
+      }
+    };
+    init();
   }, []);
 
   return (

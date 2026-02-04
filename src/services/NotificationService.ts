@@ -38,6 +38,12 @@ class NotificationService {
         }
 
         try {
+            // Verifica se o módulo nativo de notificações está disponível
+            if (!Notifications.getPermissionsAsync) {
+                console.warn('NotificationService: expo-notifications native module not available');
+                return false;
+            }
+
             const { status: existingStatus } = await Notifications.getPermissionsAsync();
             let finalStatus = existingStatus;
 
@@ -51,17 +57,22 @@ class NotificationService {
             }
 
             if (Platform.OS === 'android') {
-                await Notifications.setNotificationChannelAsync('default', {
-                    name: 'default',
-                    importance: Notifications.AndroidImportance.MAX,
-                    vibrationPattern: [0, 250, 250, 250],
-                    lightColor: '#FF231F7C',
-                });
+                // Tenta criar o canal de notificação, mas não falha se der erro
+                try {
+                    await Notifications.setNotificationChannelAsync('default', {
+                        name: 'default',
+                        importance: Notifications.AndroidImportance.MAX,
+                        vibrationPattern: [0, 250, 250, 250],
+                        lightColor: '#FF231F7C',
+                    });
+                } catch (channelError) {
+                    console.warn('NotificationService: Error creating notification channel', channelError);
+                }
             }
 
             return true;
         } catch (error) {
-            console.error('NotificationService: Error requesting permissions', error);
+            console.error('NotificationService: Fatal error requesting permissions', error);
             return false;
         }
     }
